@@ -1,45 +1,52 @@
 
 #include <stm32f10x.h>
+#include <inttypes.h>
 
 #include "io.h"
+#include "debug.h"
 
-void init_io()
-{
-    RCC->APB2ENR |= RCC_APB2ENR_SPI1EN | RCC_APB2ENR_IOPAEN;
+#ifdef DEBUG
+#define SPI_SPEED_SELECT SPI_CR1_BR_1
+#else
+#define SPI_SPEED_SELECT 0
+#endif
 
-    // configure SPI / SDCS / old SRCS / DC / ECS
+
+void init_io() {
+    // enable spi1 and port a
+    RCC->APB2ENR = RCC_APB2ENR_SPI1EN | RCC_APB2ENR_IOPAEN;
+
+    // configure port a per readme
     GPIOA->CRL = 0xb4bb3333;
+    GPIOA->CRH = 0x44433443;
 
-    // configure new SRCS / Busy / RST
-    GPIOA->CRH = 0x00034003;
+    // reset all cs
+    RESET_CS;
 
-    // configure SPI1 to be full duplex, master, with fsck / 8
-    SPI1->CR1 = SPI_CR1_MSTR | SPI_CR1_BR_1;
+    // configure spi 8b / master / (fpck/2)
+    SPI1->CR1 = SPI_CR1_MSTR | SPI_SPEED_SELECT;
+
     SPI1->CR1 |= SPI_CR1_SPE;
 }
 
-inline void send_spi1(uint8_t data)
-{
-    // check and wait if spi hardware needs some more time
-    while (SPI1->SR & SPI_SR_BSY) { }
+void send_spi1(uint8_t data) {
+    // wait for spi hardware
+    while(SPI1->SR & SPI_SR_BSY) {}
     SPI1->DR = data;
 }
 
-inline uint8_t rec_spi1()
-{
-    // wait for hardware and data in shift register
-    while(SPI1->SR & SPI_SR_BSY) {}
+uint8_t rec_spi1() {
+    // send 0x00 to generate clock for answer
+    send_spi1(0x00);
+
+    // wait for input in shift register
+    while(!(SPI1->SR & SPI_SR_RXNE)) {}
+
     return SPI1->DR;
 }
 
-inline void wait_10u(int us)
-{
-    uint16_t i;
-    uint8_t j = 1, k = 2;
-
-    for (i = 0; i < us; i++) {
-        j ^= k;
-        k ^= j;
-        j ^= k;
+inline void wait_1u(uint32_t us) {
+    uint8_t i;
+    for(i = 0; i < 4; i++) {
     }
 }

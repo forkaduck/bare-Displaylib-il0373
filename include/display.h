@@ -4,6 +4,9 @@
 #include <inttypes.h>
 #include "io.h"
 
+#define verticalRes 200
+#define horizontalRes 200
+
 enum {
     D_PSR = 0x0,
     D_PWR = 0x1,

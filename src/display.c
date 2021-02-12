@@ -1,8 +1,10 @@
-#include <stm32f10x.h>
 #include <inttypes.h>
+#include <stm32f10x.h>
 
 #include "display.h"
 #include "io.h"
+
+#include "sram.h"
 
 void send_display(uint8_t command, uint8_t data[], size_t datasize)
 {
@@ -12,7 +14,7 @@ void send_display(uint8_t command, uint8_t data[], size_t datasize)
     while (BUSY) { }
 
     // enable ecs pin
-    ECS = 0x1;
+    ECS = 0x0;
 
     send_spi1(command);
 
@@ -27,16 +29,16 @@ void send_display(uint8_t command, uint8_t data[], size_t datasize)
 
     // wait for outgoing data and reset all cs
     while (SPI1->SR & SPI_SR_BSY) { }
-    GPIOA->BRR = 0x100f;
+    RESET_CS;
 }
 
 void init_display()
 {
     // --- Setup the display driver ---
     // Reset and wait for display
-    while (BUSY) {}
+    while (BUSY) { }
     RST = 0x1;
-    wait_10u(3);
+    wait_1u(30);
     RST = 0x0;
     while (BUSY) { }
 
@@ -65,33 +67,70 @@ void init_display()
         send_display(D_PON, NULL, 0);
 
         // wait for busy
-        while(BUSY) {}
+        while (BUSY) { }
 
         // setup panel settings
         // Res 160x296 / LUT from reg / BW / Gate Scan up / Shift right / Booster on / Soft reset on
-        wr = (struct wrdata) { .data = { 0xff} };
+        wr = (struct wrdata) { .data = { 0xff } };
         send_display(D_PSR, wr.data, 1);
 
         // setup pll
         // M = 111b / N = 100 -> 50Hz Frame Rate
-        wr = (struct wrdata) { .data = { 0x3c} };
+        wr = (struct wrdata) { .data = { 0x3c } };
         send_display(D_PLL, wr.data, 1);
 
         // overwrite resolution from panel settings
         // HRES = c8 (200)
         // VRES High = 0
         // VRES = c8 (200)
-        wr = (struct wrdata) { .data = { 0xc8, 0x00, 0xc8} };
+        wr = (struct wrdata) { .data = { 0xc8, 0x00, 0xc8 } };
         send_display(D_TRES, wr.data, 3);
 
         // vcm_dc
         // VCOM_DC = 0.9V
-        wr = (struct wrdata) { .data = { 0x12} };
+        wr = (struct wrdata) { .data = { 0x12 } };
         send_display(D_VDCS, wr.data, 1);
 
         // setup Vcom and data interval (in BW mode)
         // VBD = 01b LUTWB / DDX = 11b / CDI = 0111b (10 interval)
-        wr = (struct wrdata) { .data = { 0x77} };
+        wr = (struct wrdata) { .data = { 0x77 } };
         send_display(D_CDI, wr.data, 1);
+    }
+}
+
+void push_display()
+{
+    size_t i;
+    const size_t buffersize = (200 * 200) / 8;
+    uint8_t framebuffer[buffersize];
+
+    // read framebuffer from sram
+    for (i = 0; i < buffersize; i++) {
+        framebuffer[i] = sram_read_byte(i);
+    }
+
+    // send frame
+    send_display(D_DTM1, framebuffer, buffersize);
+
+    // send data stop
+    send_display(D_DSP, NULL, 0);
+
+    // send refresh
+    send_display(D_DRF, NULL, 0);
+}
+
+void drawpixel(uint8_t x, uint8_t y, uint8_t value)
+{
+    const size_t bitoffset = (size_t)(x + y * verticalRes);
+    uint8_t temp;
+
+    // read byte from sram
+    temp = sram_read_byte(bitoffset / 8);
+
+    {
+        const uint8_t bitindex = bitoffset % 8;
+
+        // write modified value to memory location
+        sram_write_byte(bitoffset / 8, (temp & ~(0x1 << bitindex)) | value);
     }
 }

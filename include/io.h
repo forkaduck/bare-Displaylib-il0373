@@ -14,6 +14,8 @@
 #define RST *((volatile uint32_t*)(BB_PERIPH(GPIOA_BASE + 3 * sizeof(uint32_t), 8)))
 #define BUSY *((volatile uint32_t*)(BB_PERIPH(GPIOA_BASE + 2 * sizeof(uint32_t), 11)))
 
+#define RESET_CS (GPIOA->BSRR = 0x100f)
+
 #define size_t uint64_t
 #define NULL ((void*)0)
 
@@ -21,6 +23,6 @@
 void init_io();
 void send_spi1(uint8_t data);
 uint8_t rec_spi1();
-void wait_10u(int us);
+void wait_1u(uint32_t us);
 
 #endif
