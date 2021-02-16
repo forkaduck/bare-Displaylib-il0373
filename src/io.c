@@ -1,52 +1,88 @@
 
-#include <stm32f10x.h>
 #include <inttypes.h>
+#include <stm32f10x.h>
 
-#include "io.h"
 #include "debug.h"
+#include "io.h"
 
-#ifdef DEBUG
-#define SPI_SPEED_SELECT SPI_CR1_BR_1
-#else
-#define SPI_SPEED_SELECT 0
-#endif
+void spi1_init()
+{
+	// enable spi1 and port a
+	RCC->APB2ENR = RCC_APB2ENR_SPI1EN | RCC_APB2ENR_IOPAEN;
 
+	// configure port a per readme
+	GPIOA->CRL = 0xb8bb3333;
+	GPIOA->CRH = 0x88833883;
+	GPIOA->ODR = 0x00000000;
 
-void init_io() {
-    // enable spi1 and port a
-    RCC->APB2ENR = RCC_APB2ENR_SPI1EN | RCC_APB2ENR_IOPAEN;
+	// configure spi 8b / master / (fpck/4)
+	SPI1->CR1 = SPI_CR1_MSTR | SPI_CR1_BR_1;
+	SPI1->CR2 = 0x0000;
 
-    // configure port a per readme
-    GPIOA->CRL = 0xb4bb3333;
-    GPIOA->CRH = 0x44433443;
+	SPI1->SR = 0x0002; // reset status register
 
-    // reset all cs
-    RESET_CS;
-
-    // configure spi 8b / master / (fpck/2)
-    SPI1->CR1 = SPI_CR1_MSTR | SPI_SPEED_SELECT;
-
-    SPI1->CR1 |= SPI_CR1_SPE;
+	SPI1->CR1 |= SPI_CR1_SPE;
+	while (SPI1->SR & SPI_SR_BSY) {
+	}
 }
 
-void send_spi1(uint8_t data) {
-    // wait for spi hardware
-    while(SPI1->SR & SPI_SR_BSY) {}
-    SPI1->DR = data;
+inline void spi1_reset_cs()
+{
+	while (SPI1->SR & SPI_SR_BSY) {
+	}
+	GPIOA->BSRR = 0x100f;
 }
 
-uint8_t rec_spi1() {
-    // send 0x00 to generate clock for answer
-    send_spi1(0x00);
+inline void spi1_set_speed(uint8_t speed)
+{
+	SPI1->CR1 &= ~SPI_CR1_SPE;
+	while (SPI1->SR & SPI_SR_BSY) {
+	}
 
-    // wait for input in shift register
-    while(!(SPI1->SR & SPI_SR_RXNE)) {}
+	SPI1->CR1 =
+		(SPI1->CR1 & ~(SPI_CR1_BR_2 | SPI_CR1_BR_1 | SPI_CR1_BR_0)) |
+		(speed << 3);
 
-    return SPI1->DR;
+	SPI1->CR1 |= SPI_CR1_SPE;
+	while (SPI1->SR & SPI_SR_BSY) {
+	}
 }
 
-inline void wait_1u(uint32_t us) {
-    uint8_t i;
-    for(i = 0; i < 4; i++) {
-    }
+inline void spi1_send(uint8_t data)
+{
+	// wait for tx spi hardware
+	SPI1->DR = data;
+	while (!(SPI1->SR & SPI_SR_TXE)) {
+	}
+}
+
+inline uint8_t spi1_rec()
+{
+	// take out the trash
+	while (SPI1->SR & SPI_SR_RXNE) {
+		// just use the DR register in some way
+		// to unset the flag
+		if (SPI1->DR == 0x00) {
+			SPI1->SR &= ~SPI_SR_OVR;
+		}
+	}
+
+	// send one extra byte to generate clock for return val
+	SPI1->DR = 0x00;
+	while (!(SPI1->SR & SPI_SR_TXE)) {
+	}
+
+	// wait for input in shift register
+	while (!(SPI1->SR & SPI_SR_RXNE)) {
+	}
+	return SPI1->DR;
+}
+
+inline void wait_1u(uint32_t us)
+{
+	uint8_t i, j;
+	for (i = 0; i < us; i++) {
+		for (j = 0; j < 4; j++) {
+		}
+	}
 }

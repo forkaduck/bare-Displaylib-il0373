@@ -14,15 +14,35 @@
 #define RST *((volatile uint32_t*)(BB_PERIPH(GPIOA_BASE + 3 * sizeof(uint32_t), 8)))
 #define BUSY *((volatile uint32_t*)(BB_PERIPH(GPIOA_BASE + 2 * sizeof(uint32_t), 11)))
 
-#define RESET_CS (GPIOA->BSRR = 0x100f)
 
 #define size_t uint64_t
 #define NULL ((void*)0)
 
+enum {
+    spi1_fpclk2 = 0x0,
+    spi1_fpclk4 = 0x1,
+    spi1_fpclk8 = 0x2,
+    spi1_fpclk16 = 0x3,
+    spi1_fpclk32 = 0x4,
+    spi1_fpclk64 = 0x5,
+    spi1_fpclk128 = 0x6,
+    spi1_fpclk256 = 0x7
+};
 
-void init_io();
-void send_spi1(uint8_t data);
-uint8_t rec_spi1();
+struct spi1_data {
+    uint8_t *out;
+    size_t outsize;
+
+    uint8_t *in;
+    size_t insize;
+    
+    volatile uint32_t* cs;
+};
+
+void spi1_init();
+void spi1_reset_cs();
+void spi1_send(uint8_t data);
+uint8_t spi1_rec();
 void wait_1u(uint32_t us);
 
 #endif

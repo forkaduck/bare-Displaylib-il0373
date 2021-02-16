@@ -1,120 +1,128 @@
-#include <inttypes.h>
 #include "stm32f10x.h"
+#include <inttypes.h>
 
+#include "debug.h"
 #include "io.h"
 #include "sram.h"
-#include "debug.h"
 
-static inline void send_addr(uint16_t addr) {
-    send_spi1((addr & 0xff00) >> 8);
-    send_spi1(addr & 0x00ff);
+static inline void sram_sendaddr(uint16_t addr)
+{
+	spi1_send((addr & 0xff00) >> 8);
+	spi1_send(addr & 0x00ff);
 }
-
 
 // --- basic io ---
 uint8_t sram_read_byte(uint16_t addr)
 {
-    uint8_t temp;
+	uint8_t temp = 0x00;
 
-    SRCS = 0x0;
+	SRCS = 0x0;
 
-    send_spi1(SRAM_READ);
-    send_addr(addr);
+	spi1_send(SRAM_READ);
+	sram_sendaddr(addr);
 
-    temp = rec_spi1();
+	temp = spi1_rec();
 
-    // wait for spi1 to finish
-    while (SPI1->SR & SPI_SR_BSY) { }
-    RESET_CS;
-    return temp;
+	spi1_reset_cs();
+	return temp;
 }
 
 void sram_write_byte(uint16_t addr, uint8_t data)
 {
-    SRCS = 0x0;
+	SRCS = 0x0;
 
-    send_spi1(SRAM_WRITE);
-    send_addr(addr);
+	spi1_send(SRAM_WRITE);
+	sram_sendaddr(addr);
+	spi1_send(data);
 
-    // write byte
-    send_spi1(data);
-
-    // wait for spi to finish
-    while (SPI1->SR & SPI_SR_BSY) { }
-    RESET_CS;
+	spi1_reset_cs();
 }
-
 
 // --- status manipulation ---
 uint8_t sram_read_status()
 {
-    uint8_t temp;
-    SRCS = 0x0;
+	uint8_t temp;
+	SRCS = 0x0;
 
-    // send read status
-    send_spi1(SRAM_RDSR);
+	spi1_send(SRAM_RDSR);
+	temp = spi1_rec();
 
-    temp = rec_spi1();
-
-    // wait for spi1 to finish
-    while (SPI1->SR & SPI_SR_BSY) { }
-    RESET_CS;
-    return temp;
+	spi1_reset_cs();
+	return temp & 0xf0;
 }
 
 void sram_write_status(uint8_t data)
 {
-    SRCS = 0x0;
+	SRCS = 0x0;
 
-    // send write status and data
-    send_spi1(SRAM_WRSR);
-    send_spi1(data);
+	spi1_send(SRAM_WRSR);
+	spi1_send(data | 0x3);
 
-    // wait for spi1 to finish
-    while (SPI1->SR & SPI_SR_BSY) { }
-    RESET_CS;
+	spi1_reset_cs();
 }
 
-void sram_write_sequence(uint16_t addr, uint8_t data[], size_t size) {
-    size_t i = 0;
+void sram_write_sequence(uint16_t addr, uint8_t data[], size_t size)
+{
+	size_t i;
+	assert(size <= SRAM_SIZE);
 
-    assert(size <= SRAM_SIZE);
+	// change mode to sequential
+	sram_write_status(SRAM_MODE_SEQUENTIAL);
+	assert(sram_read_status() == SRAM_MODE_SEQUENTIAL);
 
-    // change mode to sequential
-    sram_write_status(SRAM_MODE_SEQUENTIAL);
+	SRCS = 0x0;
 
-    assert(sram_read_status() == (SRAM_MODE_SEQUENTIAL | 0x2));
+	// issue write command and addr to sram
+	spi1_send(SRAM_WRITE);
+	sram_sendaddr(addr);
 
-    SRCS = 0x0;
+	for (i = 0; i < size; i++) {
+		spi1_send(data[i]);
+	}
 
-    // issue write command and addr to sram
-    send_spi1(SRAM_WRITE);
-    send_addr(addr);
+	spi1_reset_cs();
 
-    for(i = 0; i < size; i++) {
-        send_spi1(data[i]);
-    }
+	// reset mode to byte wise
+	sram_write_status(SRAM_MODE_BYTE);
+	assert(sram_read_status() == SRAM_MODE_BYTE);
+}
 
-    RESET_CS;
+void sram_read_sequence(uint16_t addr, uint8_t *data, size_t size)
+{
+	assert(size <= SRAM_SIZE);
 
-    // reset mode to byte wise
-    sram_write_status(SRAM_MODE_BYTE);
+	// change mode to sequential
+	sram_write_status(SRAM_MODE_SEQUENTIAL);
+	assert(sram_read_status() == SRAM_MODE_SEQUENTIAL);
 
-    assert(sram_read_status() == (SRAM_MODE_BYTE | 0x2));
+	SRCS = 0x0;
+
+	spi1_send(SRAM_READ);
+	sram_sendaddr(addr);
+
+	// TODO do stuff
+
+	spi1_reset_cs();
+
+	// reset mode to byte wise
+	sram_write_status(SRAM_MODE_BYTE);
+	assert(sram_read_status() == SRAM_MODE_BYTE);
 }
 
 // --- convenience functions ---
-void sram_clear() {
-    size_t i;
-    uint8_t data[SRAM_SIZE];
+void sram_clear()
+{
+	size_t i;
+	uint8_t data[SRAM_SIZE];
 
-    for(i = 0; i < SRAM_SIZE; i++) {
-        data[i] = 0x00;
-    }
+	for (i = 0; i < SRAM_SIZE; i++) {
+		data[i] = 0x00;
+	}
 
-    sram_write_sequence(0x0000, data, SRAM_SIZE);
+	sram_write_sequence(0x0000, data, SRAM_SIZE);
 }
 
-void sram_init() {
-    sram_write_status(SRAM_MODE_BYTE);
+void sram_init()
+{
+	sram_write_status(SRAM_MODE_BYTE);
 }
