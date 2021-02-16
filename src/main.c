@@ -8,14 +8,14 @@
 #include "sram.h"
 
 // Display - Working
-// init - broken
-// sending commands - broken
+// broken - init
+// broken - sending commands
 
 // SRAM - Working
-// Reading and writing
-// Sequential writing
-// Mode set
-// Sequential reading broken
+// 0 - Reading and writing
+// 2 - Sequential writing
+// 1 - Mode write and read
+// broken - Sequential reading
 
 void test(uint8_t testnr)
 {
