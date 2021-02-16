@@ -13,9 +13,9 @@
 
 // SRAM - Working
 // 0 - Reading and writing
-// 2 - Sequential writing
 // 1 - Mode write and read
-// broken - Sequential reading
+// 2 - Sequential writing
+// 3 - Sequential reading
 
 void test(uint8_t testnr)
 {
@@ -48,7 +48,22 @@ void test(uint8_t testnr)
 		}
 		break;
 
-	case 3:
+	case 3: {
+		// sequential read and write test
+		uint8_t data[SRAM_SIZE];
+		uint8_t returndat[SRAM_SIZE];
+
+		sram_write_sequence(0x0000, data, SRAM_SIZE);
+
+		sram_read_sequence(0x0000, returndat, SRAM_SIZE);
+
+		for (i = 0; i < SRAM_SIZE; i++) {
+			assert(data[i] == returndat[i]);
+		}
+
+	} break;
+
+	case 4:
 		// test if the display can show simple random data
 		{
 			const size_t buffersize = (200 * 200) / 8;
@@ -81,6 +96,6 @@ int main()
 	//init_display();
 	__enable_irq();
 
-	test(2);
+	test(3);
 	return 0;
 }

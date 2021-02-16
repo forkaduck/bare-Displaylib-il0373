@@ -7,6 +7,10 @@
 
 static inline void sram_sendaddr(uint16_t addr)
 {
+	// discard anything over the max
+	addr &= SRAM_MAX;
+
+	// send address in two byte fractions
 	spi1_send((addr & 0xff00) >> 8);
 	spi1_send(addr & 0x00ff);
 }
@@ -18,9 +22,11 @@ uint8_t sram_read_byte(uint16_t addr)
 
 	SRCS = 0x0;
 
+	// send read followed by the address
 	spi1_send(SRAM_READ);
 	sram_sendaddr(addr);
 
+	// wait for data from sram
 	temp = spi1_rec();
 
 	spi1_reset_cs();
@@ -89,6 +95,7 @@ void sram_write_sequence(uint16_t addr, uint8_t data[], size_t size)
 
 void sram_read_sequence(uint16_t addr, uint8_t *data, size_t size)
 {
+	size_t i;
 	assert(size <= SRAM_SIZE);
 
 	// change mode to sequential
@@ -100,7 +107,9 @@ void sram_read_sequence(uint16_t addr, uint8_t *data, size_t size)
 	spi1_send(SRAM_READ);
 	sram_sendaddr(addr);
 
-	// TODO do stuff
+	for (i = 0; i < size; i++) {
+		data[i] = spi1_rec();
+	}
 
 	spi1_reset_cs();
 

@@ -4,7 +4,8 @@
 #include <inttypes.h>
 #include "io.h"
 
-#define SRAM_SIZE 8192
+static const uint16_t SRAM_MAX = 0x1FFF;
+static const uint16_t SRAM_SIZE = SRAM_MAX + 1;
 
 enum {
     SRAM_READ = 0x03,
