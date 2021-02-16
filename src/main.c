@@ -50,13 +50,21 @@ void test(uint8_t testnr)
 
 	case 3: {
 		// sequential read and write test
+		uint8_t j = 0;
 		uint8_t data[SRAM_SIZE];
 		uint8_t returndat[SRAM_SIZE];
+
+		// set data to a recognisable pattern
+		for (i = 0; i < SRAM_SIZE; i++) {
+			data[i] = j;
+			j++;
+		}
 
 		sram_write_sequence(0x0000, data, SRAM_SIZE);
 
 		sram_read_sequence(0x0000, returndat, SRAM_SIZE);
 
+		// check if the same pattern was read
 		for (i = 0; i < SRAM_SIZE; i++) {
 			assert(data[i] == returndat[i]);
 		}
