@@ -27,10 +27,14 @@ PA12: new SRCS
 PA13...15: Reserved
 
 
-## Display unit SPI Framing stats
+## Display
+* 14 MHz theoretical speed
 * update time of 180 seconds (27s full refresh time)
 * 3.3/5V
 * MSB first
 * CPOL ??? (0 for now)
 * CPHA ??? (1 clock transistion for now)
 
+## SRAM
+* 20 MHz theoretical speed
+* MSB first
