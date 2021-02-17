@@ -48,7 +48,7 @@ PA13...15: Reserved
 | PLL config          | IL0373_PLL                | 1    | 0x29 |
 | VCM config          | IL0373_VCM_DC_SETTING     | 1    | 0x0A |
 | Wait for busy       | 
-
+| Set resolution      | IL0373_RESOLUTION         |
 *Data
 
 
