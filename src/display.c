@@ -106,8 +106,8 @@ void init_il0373()
 		// HRES = c8 (200)
 		// VRES High = 0
 		// VRES = c8 (200)
-		/*wr = (struct wrdata){ .data = { 0xc8, 0x00, 0xc8 } };
-		send_il0373(D_TRES, wr.data, 3);*/
+		wr = (struct wrdata){ .data = { 0xc8, 0x00, 0xc8 } };
+		send_il0373(D_TRES, wr.data, 3);
 
 		// wait for busy
 		while (!BUSY) {
