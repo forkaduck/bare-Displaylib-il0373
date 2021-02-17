@@ -78,13 +78,13 @@ void test(uint8_t testnr)
 			uint8_t framebuffer[buffersize];
 
 			// send frame
-			send_display(D_DTM1, framebuffer, buffersize);
+			send_il0373(D_DTM1, framebuffer, buffersize);
 
 			// send data stop
-			send_display(D_DSP, NULL, 0);
+			send_il0373(D_DSP, NULL, 0);
 
 			// send refresh
-			send_display(D_DRF, NULL, 0);
+			send_il0373(D_DRF, NULL, 0);
 		}
 		break;
 	}
@@ -101,9 +101,9 @@ int main()
 	__disable_irq();
 	spi1_init();
 	sram_init();
-	//init_display();
+	init_il0373();
 	__enable_irq();
 
-	test(3);
+	test(4);
 	return 0;
 }

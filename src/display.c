@@ -6,57 +6,56 @@
 
 #include "sram.h"
 
-void send_display(uint8_t command, uint8_t data[], size_t datasize)
+void send_il0373(uint8_t command, uint8_t data[], size_t datasize)
 {
 	size_t i;
 
 	// wait for display
-	while (BUSY) {
+	while (!BUSY) {
 	}
 
 	ECS = 0x0;
 
 	spi1_send(command);
 
-	if (datasize != 0 && data != NULL) {
+	while (SPI1->SR & SPI_SR_BSY) {
+	}
+
+	if (data) {
 		// enable D/C (data mode)
 		DC = 0x1;
 
 		for (i = 0; i < datasize; i++) {
 			spi1_send(data[i]);
 		}
+		DC = 0x0;
 	}
 
-	ECS = 0x1;
-
-	// wait for outgoing data and reset all cs
-	while (SPI1->SR & SPI_SR_BSY) {
-	}
+	spi1_reset_cs();
 }
 
-void init_display()
+void init_il0373()
 {
 	// --- Setup the display driver ---
 	// Reset and wait for display
-	while (BUSY) {
+	while (!BUSY) {
 	}
+
 	RST = 0x1;
-	wait_1u(30);
+	wait_1u(10);
+
 	RST = 0x0;
-	while (BUSY) {
+	wait_1u(10);
+
+	RST = 0x1;
+	wait_1u(10);
+	while (!BUSY) {
 	}
 
 	{
 		struct wrdata {
 			uint8_t data[20];
 		} wr;
-
-		// softstart voltage booster
-		// 10ms start period a / strength 3 / min off time 6.58us
-		// 10ms start period b / strength 3 / min off time 6.58us
-		// 10ms start period c / strength 3 / min off time 6.58us
-		wr = (struct wrdata){ .data = { 0x17, 0x17, 0x17 } };
-		send_display(D_BTST, wr.data, 3);
 
 		// power settings
 		// Source power internal / gate power internal
@@ -66,69 +65,77 @@ void init_display()
 		// VDHR 4V
 		wr = (struct wrdata){ .data = { 0x03, 0x00, 0x2b, 0x2b,
 						0x09 } };
-		send_display(D_PWR, wr.data, 5);
+		send_il0373(D_PWR, wr.data, 5);
+
+		// softstart voltage booster
+		// 10ms start period a / strength 3 / min off time 6.58us
+		// 10ms start period b / strength 3 / min off time 6.58us
+		// 10ms start period c / strength 3 / min off time 6.58us
+		wr = (struct wrdata){ .data = { 0x17, 0x17, 0x17 } };
+		send_il0373(D_BTST, wr.data, 3);
 
 		// power on
-		send_display(D_PON, NULL, 0);
+		send_il0373(D_PON, NULL, 0);
 
 		// wait for busy
-		while (BUSY) {
+		while (!BUSY) {
 		}
 
-		// setup panel settings
+		// setup panel settings TODO
 		// Res 160x296 / LUT from reg / BW / Gate Scan up / Shift right / Booster on
 		// / Soft reset on
-		wr = (struct wrdata){ .data = { 0xff } };
-		send_display(D_PSR, wr.data, 1);
+		wr = (struct wrdata){ .data = { 0xcf } };
+		send_il0373(D_PSR, wr.data, 1);
 
-		// setup pll
+		// setup Vcom and data interval (in BW mode) TODO
+		// VBD = 01b LUTWB / DDX = 11b / CDI = 0111b (10 interval)
+		wr = (struct wrdata){ .data = { 0x37 } };
+		send_il0373(D_CDI, wr.data, 1);
+
+		// setup pll TODO
 		// M = 111b / N = 100 -> 50Hz Frame Rate
-		wr = (struct wrdata){ .data = { 0x3c } };
-		send_display(D_PLL, wr.data, 1);
+		wr = (struct wrdata){ .data = { 0x29 } };
+		send_il0373(D_PLL, wr.data, 1);
+
+		// vcm_dc TODO
+		// VCOM_DC = 0.9V
+		wr = (struct wrdata){ .data = { 0x0A } };
+		send_il0373(D_VDCS, wr.data, 1);
 
 		// overwrite resolution from panel settings
 		// HRES = c8 (200)
 		// VRES High = 0
 		// VRES = c8 (200)
-		wr = (struct wrdata){ .data = { 0xc8, 0x00, 0xc8 } };
-		send_display(D_TRES, wr.data, 3);
+		/*wr = (struct wrdata){ .data = { 0xc8, 0x00, 0xc8 } };
+		send_il0373(D_TRES, wr.data, 3);*/
 
-		// vcm_dc
-		// VCOM_DC = 0.9V
-		wr = (struct wrdata){ .data = { 0x12 } };
-		send_display(D_VDCS, wr.data, 1);
-
-		// setup Vcom and data interval (in BW mode)
-		// VBD = 01b LUTWB / DDX = 11b / CDI = 0111b (10 interval)
-		wr = (struct wrdata){ .data = { 0x77 } };
-		send_display(D_CDI, wr.data, 1);
+		// wait for busy
+		while (!BUSY) {
+		}
 	}
 }
 
-void push_display()
+void push_il0373()
 {
-	size_t i;
 	const size_t buffersize = (200 * 200) / 8;
 	uint8_t framebuffer[buffersize];
 
 	// read framebuffer from sram
-	for (i = 0; i < buffersize; i++) {
-		framebuffer[i] = sram_read_byte(i);
-	}
+	sram_read_sequence(0x0000, framebuffer, buffersize);
 
 	// send frame
-	send_display(D_DTM1, framebuffer, buffersize);
+	send_il0373(D_DTM1, framebuffer, buffersize);
 
 	// send data stop
-	send_display(D_DSP, NULL, 0);
+	send_il0373(D_DSP, NULL, 0);
 
 	// send refresh
-	send_display(D_DRF, NULL, 0);
+	send_il0373(D_DRF, NULL, 0);
 }
 
-void drawpixel(uint8_t x, uint8_t y, uint8_t value)
+void drawpixel_il0373(uint8_t x, uint8_t y, uint8_t value)
 {
-	const size_t bitoffset = (size_t)(x + y * verticalRes);
+	const size_t bitoffset = (size_t)(x + y * 200);
 	uint8_t temp;
 
 	// read byte from sram

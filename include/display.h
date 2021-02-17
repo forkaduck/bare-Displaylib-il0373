@@ -4,18 +4,15 @@
 #include <inttypes.h>
 #include "io.h"
 
-#define verticalRes 200
-#define horizontalRes 200
-
 enum {
-    D_PSR = 0x0,
-    D_PWR = 0x1,
-    D_POFF = 0x2,
-    D_PFS = 0x3,
-    D_PON = 0x4,
-    D_PMES = 0x5,
-    D_BTST = 0x6,
-    D_DSLP = 0x7,
+    D_PSR = 0x00,
+    D_PWR = 0x01,
+    D_POF = 0x02,
+    D_PFS = 0x03,
+    D_PON = 0x04,
+    D_PMES = 0x05,
+    D_BTST = 0x06,
+    D_DSLP = 0x07,
     D_DTM1 = 0x10,
     D_DSP = 0x11,
     D_DRF = 0x12,
@@ -34,6 +31,7 @@ enum {
     D_LPD = 0x51,
     D_TCON = 0x60,
     D_TRES = 0x61,
+    D_REV = 0x70,
     D_FLG = 0x71,
     D_AMVCOM = 0x80,
     D_RVCOM = 0x81,
@@ -44,10 +42,11 @@ enum {
     D_PGM = 0xa0,
     D_APG = 0xa1,
     D_ROTP = 0xa2,
-    D_PWS = 0xe3
+    D_CCSET = 0xe0,
+    D_TSSET = 0xe5
 };
 
 
-void send_display(uint8_t command, uint8_t data[], size_t datasize);
-void init_display();
+void send_il0373(uint8_t command, uint8_t data[], size_t datasize);
+void init_il0373();
 #endif

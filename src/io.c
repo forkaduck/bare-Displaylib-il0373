@@ -30,7 +30,7 @@ inline void spi1_reset_cs()
 {
 	while (SPI1->SR & SPI_SR_BSY) {
 	}
-	GPIOA->BSRR = 0x100f;
+	GPIOA->BSRR = 0x100d;
 }
 
 inline void spi1_set_speed(uint8_t speed)
