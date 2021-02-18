@@ -4,6 +4,11 @@
 #include <inttypes.h>
 #include "io.h"
 
+const size_t D_HORZRES = 200;
+const size_t D_VERTRES = 200;
+const size_t D_BUFF_SIZE = (D_HORZRES * D_VERTRES) / 8;
+
+
 enum {
     D_PSR = 0x00,
     D_PWR = 0x01,

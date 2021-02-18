@@ -114,21 +114,20 @@ void init_il0373()
 
 void push_il0373()
 {
-	const size_t buffersize = (200 * 200) / 8;
-	uint8_t framebuffer[buffersize];
+	uint8_t framebuffer[D_BUFF_SIZE];
 
-	// read framebuffer from sram
-	sram_read_sequence(0x0000, framebuffer, buffersize);
+	// read framebuffer from sram (b/w)
+	sram_read_sequence(0x0000, framebuffer, D_BUFF_SIZE);
 
 	// send b/w frame
-	send_il0373(D_DTM1, framebuffer, buffersize);
+	send_il0373(D_DTM1, framebuffer, D_BUFF_SIZE);
 	send_il0373(D_DSP, NULL, 0);
 
-	// read framebuffer from sram
-	sram_read_sequence(buffersize, framebuffer, buffersize);
+	// read framebuffer from sram (r/n)
+	sram_read_sequence(D_BUFF_SIZE, framebuffer, D_BUFF_SIZE);
 
 	// send r/n
-	send_il0373(D_DTM2, framebuffer, buffersize);
+	send_il0373(D_DTM2, framebuffer, D_BUFF_SIZE);
 	send_il0373(D_DSP, NULL, 0);
 
 	// send refresh
