@@ -35,6 +35,12 @@ PA13...15: Reserved
 * CPHA 0
 * SPI MODE 0
 
+DTM1 -> 0 -> Black
+    -> 1 -> White
+
+DTM2 -> 0 -> Red
+    -> 1 -> None
+
 
 #### Step by step init
 | Init stage          | Command                   | Size | *    | *    | *    | *    | *    |
