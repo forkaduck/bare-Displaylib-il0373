@@ -4,9 +4,10 @@
 #include <inttypes.h>
 #include "io.h"
 
-static const size_t D_HORZRES = 200;
-static const size_t D_VERTRES = 200;
+static const size_t D_HORZRES = 152;
+static const size_t D_VERTRES = 152;
 static const size_t D_BUFF_SIZE = (D_HORZRES * D_VERTRES) / 8;
+// 3050
 
 // SRAM Memory map
 // 0x0 to D_BUFF_SIZE -> b/w data

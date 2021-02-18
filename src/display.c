@@ -99,11 +99,13 @@ void init_il0373()
 		wr = (struct wrdata){ .data = { 0x0A } };
 		send_il0373(D_VDCS, wr.data, 1);
 
-		// overwrite resolution from panel settings
+		// overwrite resolution from panel settings TODO
 		// HRES = c8 (200)
 		// VRES High = 0
 		// VRES = c8 (200)
-		wr = (struct wrdata){ .data = { 0xc8, 0x00, 0xc8 } };
+		wr = (struct wrdata){ .data = { D_VERTRES & 0xff,
+						(D_HORZRES >> 8) & 0xff,
+						D_HORZRES & 0xff } };
 		send_il0373(D_TRES, wr.data, 3);
 
 		// wait for busy
@@ -132,6 +134,9 @@ void push_il0373()
 
 	// send refresh
 	send_il0373(D_DRF, NULL, 0);
+
+	while (BUSY) {
+	}
 }
 
 void drawpixel_il0373(uint8_t x, uint8_t y, uint8_t value)

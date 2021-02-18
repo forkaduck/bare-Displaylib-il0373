@@ -72,12 +72,16 @@ void test(uint8_t testnr)
 	} break;
 
 	case 4:
-		// push completely white frame to display directly
+		// push completely black frame to display directly
 		{
 			uint8_t framebuffer[D_BUFF_SIZE];
 
-			for (i = 0; i < D_BUFF_SIZE; i++) {
-				framebuffer[i] = 0xff;
+			for (i = 0; i < D_BUFF_SIZE / 2; i++) {
+				framebuffer[i] = 0x33;
+			}
+
+			for (i = D_BUFF_SIZE / 2; i < D_BUFF_SIZE; i++) {
+				framebuffer[i] = 0xcc;
 			}
 
 			// send frame
@@ -132,6 +136,6 @@ int main()
 	init_il0373();
 	__enable_irq();
 
-	test(5);
+	test(4);
 	return 0;
 }
