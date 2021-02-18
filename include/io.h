@@ -29,16 +29,6 @@ enum {
     spi1_fpclk256 = 0x7
 };
 
-struct spi1_data {
-    uint8_t *out;
-    size_t outsize;
-
-    uint8_t *in;
-    size_t insize;
-    
-    volatile uint32_t* cs;
-};
-
 void spi1_init();
 void spi1_reset_cs();
 void spi1_send(uint8_t data);
