@@ -77,21 +77,49 @@ void test(uint8_t testnr)
 			const size_t buffersize = (200 * 200) / 8;
 			uint8_t framebuffer[buffersize];
 
+			for (i = 0; i < buffersize; i++) {
+				framebuffer[i] = 0xff;
+			}
+
 			// send frame
 			send_il0373(D_DTM1, framebuffer, buffersize);
+			send_il0373(D_DSP, NULL, 0);
 
-			// send data stop
+			for (i = 0; i < buffersize; i++) {
+				framebuffer[i] = 0xff;
+			}
+
+			send_il0373(D_DTM2, framebuffer, buffersize);
 			send_il0373(D_DSP, NULL, 0);
 
 			// send refresh
 			send_il0373(D_DRF, NULL, 0);
 		}
 		break;
-	}
 
-	// show that the test was passed
-	while (1) {
-		DC = !DC;
+	case 5:
+		// test sram as framebuffer
+		{
+			const size_t buffersize = (200 * 200) / 8;
+			uint8_t framebuffer[buffersize];
+
+			sram_clear();
+
+			for (i = 0; i < buffersize; i++) {
+				framebuffer[i] = 0x00;
+			}
+
+			sram_write_sequence(0x0000, framebuffer, buffersize);
+
+			for (i = 0; i < buffersize; i++) {
+				framebuffer[i + SRAM_SIZE] = 0xff;
+			}
+
+			sram_write_sequence(SRAM_SIZE, framebuffer, buffersize);
+
+			push_il0373();
+			break;
+		}
 	}
 }
 
@@ -104,6 +132,6 @@ int main()
 	init_il0373();
 	__enable_irq();
 
-	test(4);
+	test(5);
 	return 0;
 }

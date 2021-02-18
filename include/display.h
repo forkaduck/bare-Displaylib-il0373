@@ -47,6 +47,16 @@ enum {
 };
 
 
+enum {
+    D_BLACK = 0b00,
+    D_WHITE = 0b01,
+    D_RED = 0b00,
+    D_NONE = 0b10,
+};
+
 void send_il0373(uint8_t command, uint8_t data[], size_t datasize);
 void init_il0373();
+
+void push_il0373();
+void drawpixel_il0373(uint8_t x, uint8_t y, uint8_t value);
 #endif

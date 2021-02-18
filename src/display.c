@@ -11,7 +11,7 @@ void send_il0373(uint8_t command, uint8_t data[], size_t datasize)
 	size_t i;
 
 	// wait for display
-	while (!BUSY) {
+	while (BUSY) {
 	}
 
 	ECS = 0x0;
@@ -38,18 +38,15 @@ void init_il0373()
 {
 	// --- Setup the display driver ---
 	// Reset and wait for display
-	while (!BUSY) {
-	}
-
 	RST = 0x1;
-	wait_1u(10);
+	wait_1u(100);
 
 	RST = 0x0;
-	wait_1u(10);
+	wait_1u(100);
 
 	RST = 0x1;
-	wait_1u(10);
-	while (!BUSY) {
+	wait_1u(100);
+	while (BUSY) {
 	}
 
 	{
@@ -78,7 +75,7 @@ void init_il0373()
 		send_il0373(D_PON, NULL, 0);
 
 		// wait for busy
-		while (!BUSY) {
+		while (BUSY) {
 		}
 
 		// setup panel settings TODO
@@ -110,7 +107,7 @@ void init_il0373()
 		send_il0373(D_TRES, wr.data, 3);
 
 		// wait for busy
-		while (!BUSY) {
+		while (BUSY) {
 		}
 	}
 }
@@ -123,10 +120,15 @@ void push_il0373()
 	// read framebuffer from sram
 	sram_read_sequence(0x0000, framebuffer, buffersize);
 
-	// send frame
+	// send b/w frame
 	send_il0373(D_DTM1, framebuffer, buffersize);
+	send_il0373(D_DSP, NULL, 0);
 
-	// send data stop
+	// read framebuffer from sram
+	sram_read_sequence(buffersize, framebuffer, buffersize);
+
+	// send r/n
+	send_il0373(D_DTM2, framebuffer, buffersize);
 	send_il0373(D_DSP, NULL, 0);
 
 	// send refresh
@@ -136,16 +138,18 @@ void push_il0373()
 void drawpixel_il0373(uint8_t x, uint8_t y, uint8_t value)
 {
 	const size_t bitoffset = (size_t)(x + y * 200);
-	uint8_t temp;
+	uint8_t bwdata, rndata;
+	uint16_t addr = bitoffset / 8;
 
 	// read byte from sram
-	temp = sram_read_byte(bitoffset / 8);
+	bwdata = sram_read_byte(addr);
+	rndata = sram_read_byte(addr + SRAM_SIZE);
 
 	{
-		const uint8_t bitindex = bitoffset % 8;
+		const uint8_t bitmask = ~(0x1 << (bitoffset % 8));
 
-		// write modified value to memory location
-		sram_write_byte(bitoffset / 8,
-				(temp & ~(0x1 << bitindex)) | value);
+		sram_write_byte(addr, (bwdata & bitmask) | (value & 0x1));
+		sram_write_byte(addr + SRAM_SIZE,
+				(rndata & bitmask) | ((value & 0x2) >> 1));
 	}
 }
