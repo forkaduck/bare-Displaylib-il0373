@@ -8,6 +8,9 @@ static const size_t D_HORZRES = 200;
 static const size_t D_VERTRES = 200;
 static const size_t D_BUFF_SIZE = (D_HORZRES * D_VERTRES) / 8;
 
+// SRAM Memory map
+// 0x0 to D_BUFF_SIZE -> b/w data
+// D_BUFF_SIZE + 1 to D_BUFF_SIZE * 2 -> r/n data
 
 enum {
     D_PSR = 0x00,

@@ -6,7 +6,7 @@
 
 #include "sram.h"
 
-void send_il0373(uint8_t command, uint8_t data[], size_t datasize)
+inline void send_il0373(uint8_t command, uint8_t data[], size_t datasize)
 {
 	size_t i;
 

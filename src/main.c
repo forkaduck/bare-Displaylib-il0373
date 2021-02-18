@@ -98,6 +98,7 @@ void test(uint8_t testnr)
 
 	case 5:
 		// write to sram and push the content to the display
+		// result: all black display, if white is shown readjust resolution
 		{
 			uint8_t framebuffer[D_BUFF_SIZE];
 
@@ -110,10 +111,10 @@ void test(uint8_t testnr)
 			sram_write_sequence(0x0000, framebuffer, D_BUFF_SIZE);
 
 			for (i = 0; i < D_BUFF_SIZE; i++) {
-				framebuffer[i + SRAM_SIZE] = 0xff;
+				framebuffer[i] = 0xff;
 			}
 
-			sram_write_sequence(SRAM_SIZE, framebuffer,
+			sram_write_sequence(D_BUFF_SIZE, framebuffer,
 					    D_BUFF_SIZE);
 
 			push_il0373();
