@@ -72,24 +72,23 @@ void test(uint8_t testnr)
 	} break;
 
 	case 4:
-		// test if the display can show simple random data
+		// push completely white frame to display directly
 		{
-			const size_t buffersize = (200 * 200) / 8;
-			uint8_t framebuffer[buffersize];
+			uint8_t framebuffer[D_BUFF_SIZE];
 
-			for (i = 0; i < buffersize; i++) {
+			for (i = 0; i < D_BUFF_SIZE; i++) {
 				framebuffer[i] = 0xff;
 			}
 
 			// send frame
-			send_il0373(D_DTM1, framebuffer, buffersize);
+			send_il0373(D_DTM1, framebuffer, D_BUFF_SIZE);
 			send_il0373(D_DSP, NULL, 0);
 
-			for (i = 0; i < buffersize; i++) {
+			for (i = 0; i < D_BUFF_SIZE; i++) {
 				framebuffer[i] = 0xff;
 			}
 
-			send_il0373(D_DTM2, framebuffer, buffersize);
+			send_il0373(D_DTM2, framebuffer, D_BUFF_SIZE);
 			send_il0373(D_DSP, NULL, 0);
 
 			// send refresh
@@ -98,24 +97,24 @@ void test(uint8_t testnr)
 		break;
 
 	case 5:
-		// test sram as framebuffer
+		// write to sram and push the content to the display
 		{
-			const size_t buffersize = (200 * 200) / 8;
-			uint8_t framebuffer[buffersize];
+			uint8_t framebuffer[D_BUFF_SIZE];
 
 			sram_clear();
 
-			for (i = 0; i < buffersize; i++) {
+			for (i = 0; i < D_BUFF_SIZE; i++) {
 				framebuffer[i] = 0x00;
 			}
 
-			sram_write_sequence(0x0000, framebuffer, buffersize);
+			sram_write_sequence(0x0000, framebuffer, D_BUFF_SIZE);
 
-			for (i = 0; i < buffersize; i++) {
+			for (i = 0; i < D_BUFF_SIZE; i++) {
 				framebuffer[i + SRAM_SIZE] = 0xff;
 			}
 
-			sram_write_sequence(SRAM_SIZE, framebuffer, buffersize);
+			sram_write_sequence(SRAM_SIZE, framebuffer,
+					    D_BUFF_SIZE);
 
 			push_il0373();
 			break;
