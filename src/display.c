@@ -136,7 +136,7 @@ void push_il0373()
 
 void drawpixel_il0373(uint8_t x, uint8_t y, uint8_t value)
 {
-	const size_t bitoffset = (size_t)(x + y * 200);
+	const size_t bitoffset = (size_t)(x + y * D_HORZRES);
 	uint8_t bwdata, rndata;
 	uint16_t addr = bitoffset / 8;
 
