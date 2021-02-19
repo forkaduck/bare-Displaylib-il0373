@@ -147,6 +147,7 @@ void push_il0373()
 	}
 	send_il0373(D_DSP, NULL, 0);
 
+	// send refresh
 	send_il0373(D_DRF, NULL, 0);
 	while (BUSY) {
 	}
@@ -154,7 +155,10 @@ void push_il0373()
 
 void drawpixel_il0373(uint8_t x, uint8_t y, uint8_t value)
 {
+	// calc bit offset into sram
 	const size_t bitoffset = (size_t)(x + y * D_HORZRES);
+
+	// calc byte offset into sram
 	const size_t byteoffset = (size_t)(bitoffset / 8);
 	uint8_t bwdata, rndata;
 
@@ -163,9 +167,14 @@ void drawpixel_il0373(uint8_t x, uint8_t y, uint8_t value)
 	rndata = sram_read_byte(byteoffset + D_BUFF_SIZE);
 
 	{
+		// calc bit which should be modified
 		const uint8_t bitindex = bitoffset % 8;
+
+		// calc bitmask with given bitindex
 		const uint8_t bitmask = ~(0x80 >> bitindex);
 
+		// modify one bit in each byte read (bwdata/rndata)
+		// and send it back
 		sram_write_byte(byteoffset,
 				(bwdata & bitmask) |
 					((value & 0x1) << (8 - bitindex)));

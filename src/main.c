@@ -155,8 +155,9 @@ void test(uint8_t testnr)
 					    D_BUFF_SIZE);
 
 			for (i = 0; i < 100; i++) {
-				drawpixel_il0373(8, i, D_BLACK | D_RED);
+				drawpixel_il0373(8, i, D_WHITE | D_RED);
 			}
+
 			for (i = 0; i < 20; i++) {
 				drawpixel_il0373(i + 8, i, D_BLACK | D_NONE);
 			}
@@ -176,6 +177,6 @@ int main()
 	init_il0373();
 	__enable_irq();
 
-	test(5);
+	test(6);
 	return 0;
 }
