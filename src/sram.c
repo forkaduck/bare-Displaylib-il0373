@@ -122,13 +122,9 @@ void sram_read_sequence(uint16_t addr, uint8_t *data, size_t size)
 void sram_clear()
 {
 	size_t i;
-	uint8_t data[SRAM_SIZE];
-
 	for (i = 0; i < SRAM_SIZE; i++) {
-		data[i] = 0x00;
+		sram_write_byte(i, 0x00);
 	}
-
-	sram_write_sequence(0x0000, data, SRAM_SIZE);
 }
 
 void sram_init()
