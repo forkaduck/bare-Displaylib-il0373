@@ -72,7 +72,7 @@ void test(uint8_t testnr)
 	} break;
 
 	case 4:
-		// push completely black frame to display directly
+		// push zebra pattern with shift to display directly
 		{
 			uint8_t framebuffer[D_BUFF_SIZE];
 
@@ -102,14 +102,47 @@ void test(uint8_t testnr)
 
 	case 5:
 		// write to sram and push the content to the display
-		// result: all black display, if white is shown readjust resolution
+		// result: should show a zebra like pattern
 		{
 			uint8_t framebuffer[D_BUFF_SIZE];
 
 			sram_clear();
 
+			// set b/w buffer to zebra pattern which splits in the middle
+			for (i = 0; i < D_BUFF_SIZE / 2; i++) {
+				framebuffer[i] = 0xcc;
+			}
+
+			for (i = D_BUFF_SIZE / 2; i < D_BUFF_SIZE; i++) {
+				framebuffer[i] = 0x33;
+			}
+
+			sram_write_sequence(0x0000, framebuffer, D_BUFF_SIZE);
+
+			// set r/n buffer to show red on one of the half
+			for (i = 0; i < D_BUFF_SIZE / 2; i++) {
+				framebuffer[i] = 0x33;
+			}
+
+			for (i = D_BUFF_SIZE / 2; i < D_BUFF_SIZE; i++) {
+				framebuffer[i] = 0xff;
+			}
+
+			sram_write_sequence(D_BUFF_SIZE, framebuffer,
+					    D_BUFF_SIZE);
+
+			push_il0373();
+		}
+		break;
+
+	case 6:
+		// test if the drawpixel function works
+		{
+			uint8_t framebuffer[D_BUFF_SIZE];
+			sram_clear();
+
 			for (i = 0; i < D_BUFF_SIZE; i++) {
-				framebuffer[i] = 0x00;
+				framebuffer[i] = 0xff;
 			}
 
 			sram_write_sequence(0x0000, framebuffer, D_BUFF_SIZE);
@@ -121,9 +154,16 @@ void test(uint8_t testnr)
 			sram_write_sequence(D_BUFF_SIZE, framebuffer,
 					    D_BUFF_SIZE);
 
+			for (i = 0; i < 100; i++) {
+				drawpixel_il0373(8, i, D_BLACK | D_RED);
+			}
+			for (i = 0; i < 20; i++) {
+				drawpixel_il0373(i + 8, i, D_BLACK | D_NONE);
+			}
+
 			push_il0373();
-			break;
 		}
+		break;
 	}
 }
 
@@ -136,6 +176,6 @@ int main()
 	init_il0373();
 	__enable_irq();
 
-	test(4);
+	test(5);
 	return 0;
 }

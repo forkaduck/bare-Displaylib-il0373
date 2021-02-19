@@ -6,10 +6,28 @@
 
 #include "sram.h"
 
-inline void send_il0373(uint8_t command, uint8_t data[], size_t datasize)
+static inline void send_data_il0373(uint8_t data[], size_t datasize)
 {
 	size_t i;
 
+	ECS = 0x0;
+
+	// enable D/C (data mode)
+	DC = 0x1;
+
+	for (i = 0; i < datasize; i++) {
+		spi1_send(data[i]);
+	}
+
+	while (!(SPI1->SR & SPI_SR_TXE)) {
+	}
+	DC = 0x0;
+
+	spi1_reset_cs();
+}
+
+inline void send_il0373(uint8_t command, uint8_t data[], size_t datasize)
+{
 	// wait for display
 	while (BUSY) {
 	}
@@ -22,13 +40,7 @@ inline void send_il0373(uint8_t command, uint8_t data[], size_t datasize)
 	}
 
 	if (data) {
-		// enable D/C (data mode)
-		DC = 0x1;
-
-		for (i = 0; i < datasize; i++) {
-			spi1_send(data[i]);
-		}
-		DC = 0x0;
+		send_data_il0373(data, datasize);
 	}
 
 	spi1_reset_cs();
@@ -116,25 +128,26 @@ void init_il0373()
 
 void push_il0373()
 {
-	uint8_t framebuffer[D_BUFF_SIZE];
-
-	// read framebuffer from sram (b/w)
-	sram_read_sequence(0x0000, framebuffer, D_BUFF_SIZE);
+	uint8_t temp;
+	size_t i;
 
 	// send b/w frame
-	send_il0373(D_DTM1, framebuffer, D_BUFF_SIZE);
+	send_il0373(D_DTM1, NULL, 0);
+	for (i = 0; i < D_BUFF_SIZE; i++) {
+		temp = sram_read_byte(i);
+		send_data_il0373(&temp, 1);
+	}
 	send_il0373(D_DSP, NULL, 0);
 
-	// read framebuffer from sram (r/n)
-	sram_read_sequence(D_BUFF_SIZE, framebuffer, D_BUFF_SIZE);
-
-	// send r/n
-	send_il0373(D_DTM2, framebuffer, D_BUFF_SIZE);
+	// send r/n frame
+	send_il0373(D_DTM2, NULL, 0);
+	for (i = 0; i < D_BUFF_SIZE; i++) {
+		temp = sram_read_byte(i + D_BUFF_SIZE);
+		send_data_il0373(&temp, 1);
+	}
 	send_il0373(D_DSP, NULL, 0);
 
-	// send refresh
 	send_il0373(D_DRF, NULL, 0);
-
 	while (BUSY) {
 	}
 }
@@ -142,18 +155,23 @@ void push_il0373()
 void drawpixel_il0373(uint8_t x, uint8_t y, uint8_t value)
 {
 	const size_t bitoffset = (size_t)(x + y * D_HORZRES);
+	const size_t byteoffset = (size_t)(bitoffset / 8);
 	uint8_t bwdata, rndata;
-	uint16_t addr = bitoffset / 8;
 
 	// read byte from sram
-	bwdata = sram_read_byte(addr);
-	rndata = sram_read_byte(addr + SRAM_SIZE);
+	bwdata = sram_read_byte(byteoffset);
+	rndata = sram_read_byte(byteoffset + D_BUFF_SIZE);
 
 	{
-		const uint8_t bitmask = ~(0x1 << (bitoffset % 8));
+		const uint8_t bitindex = bitoffset % 8;
+		const uint8_t bitmask = ~(0x80 >> bitindex);
 
-		sram_write_byte(addr, (bwdata & bitmask) | (value & 0x1));
-		sram_write_byte(addr + SRAM_SIZE,
-				(rndata & bitmask) | ((value & 0x2) >> 1));
+		sram_write_byte(byteoffset,
+				(bwdata & bitmask) |
+					((value & 0x1) << (8 - bitindex)));
+
+		sram_write_byte(byteoffset + D_BUFF_SIZE,
+				(rndata & bitmask) |
+					((value & 0x2) << (8 - bitindex)));
 	}
 }
