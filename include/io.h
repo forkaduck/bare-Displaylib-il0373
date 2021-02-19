@@ -18,17 +18,6 @@
 #define size_t uint64_t
 #define NULL ((void*)0)
 
-enum {
-    spi1_fpclk2 = 0x0,
-    spi1_fpclk4 = 0x1,
-    spi1_fpclk8 = 0x2,
-    spi1_fpclk16 = 0x3,
-    spi1_fpclk32 = 0x4,
-    spi1_fpclk64 = 0x5,
-    spi1_fpclk128 = 0x6,
-    spi1_fpclk256 = 0x7
-};
-
 void spi1_init();
 void spi1_reset_cs();
 void spi1_send(uint8_t data);

@@ -33,21 +33,6 @@ inline void spi1_reset_cs()
 	GPIOA->BSRR = 0x100d;
 }
 
-inline void spi1_set_speed(uint8_t speed)
-{
-	SPI1->CR1 &= ~SPI_CR1_SPE;
-	while (SPI1->SR & SPI_SR_BSY) {
-	}
-
-	SPI1->CR1 =
-		(SPI1->CR1 & ~(SPI_CR1_BR_2 | SPI_CR1_BR_1 | SPI_CR1_BR_0)) |
-		(speed << 3);
-
-	SPI1->CR1 |= SPI_CR1_SPE;
-	while (SPI1->SR & SPI_SR_BSY) {
-	}
-}
-
 inline void spi1_send(uint8_t data)
 {
 	// wait for tx spi hardware
