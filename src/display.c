@@ -154,9 +154,7 @@ void push_il0373()
 	}
 }
 
-// bugs
-// flips one bit every 8 bits
-
+// TODO remove bitoffset replace with x
 void drawpixel_il0373(uint8_t x, uint8_t y, uint8_t value)
 {
 	// calc bit offset into sram
@@ -178,13 +176,13 @@ void drawpixel_il0373(uint8_t x, uint8_t y, uint8_t value)
 
 		// modify one bit in each byte read (bwdata/rndata)
 		// and send it back
-
 		if ((bwdata & bit) != ((value & 0x1) << (7 - bitindex))) {
 			bwdata ^= bit;
 			sram_write_byte(byteoffset, bwdata);
 		}
 
-		if ((rndata & bit) != ((value & 0x2) << (7 - bitindex - 1))) {
+		if ((rndata & bit) !=
+		    (((value & 0x2) >> 1) << (7 - bitindex))) {
 			rndata ^= bit;
 			sram_write_byte(byteoffset + D_BUFF_SIZE, rndata);
 		}
