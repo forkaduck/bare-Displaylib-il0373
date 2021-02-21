@@ -139,12 +139,15 @@ void test(uint8_t testnr)
 		{
 			sram_set_all(0xff);
 
-			// draw vertical line
+			// draw vertical line and horizontal lines
 			for (i = 0; i < 100; i++) {
-				drawpixel_il0373(8, i + 8, D_BLACK | D_RED);
+				drawpixel_il0373(8, i + 8, D_BLACK | D_NONE);
+
+				drawpixel_il0373(i + 8, 20, D_BLACK | D_NONE);
+				drawpixel_il0373(i + 8, 21, D_WHITE | D_RED);
 			}
 
-			// draw horizontal lines
+			// draw horizontal line which is waved verticaly
 			for (i = 0; i < 100; i++) {
 				if (i % 2 == 0) {
 					drawpixel_il0373(i + 8, 8,
