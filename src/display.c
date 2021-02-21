@@ -153,6 +153,9 @@ void push_il0373()
 	}
 }
 
+// bugs
+// flips every bit the function is called on
+
 void drawpixel_il0373(uint8_t x, uint8_t y, uint8_t value)
 {
 	// calc bit offset into sram
@@ -170,17 +173,19 @@ void drawpixel_il0373(uint8_t x, uint8_t y, uint8_t value)
 		// calc bit which should be modified
 		const uint8_t bitindex = bitoffset % 8;
 
-		// calc bitmask with given bitindex
-		const uint8_t bitmask = ~(0x80 >> bitindex);
+		const uint8_t bit = 0x80 >> bitindex;
 
 		// modify one bit in each byte read (bwdata/rndata)
 		// and send it back
-		sram_write_byte(byteoffset,
-				(bwdata & bitmask) |
-					((value & 0x1) << (8 - bitindex)));
 
-		sram_write_byte(byteoffset + D_BUFF_SIZE,
-				(rndata & bitmask) |
-					((value & 0x2) << (8 - bitindex)));
+		if ((bwdata & ~bit) != ((value & 0x1) << (8 - bitindex))) {
+			bwdata ^= bit;
+			sram_write_byte(byteoffset, bwdata);
+		}
+
+		/*if ((rndata & ~bit) != ((value & 0x2) << (bitindex - 1))) {
+			rndata ^= bit;
+			sram_write_byte(byteoffset + D_BUFF_SIZE, rndata);
+		}*/
 	}
 }

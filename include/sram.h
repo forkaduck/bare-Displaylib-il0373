@@ -29,6 +29,6 @@ void sram_write_status(uint8_t data);
 void sram_write_sequence(uint16_t addr, uint8_t data[], size_t size);
 void sram_read_sequence(uint16_t, uint8_t *data, size_t size);
 
-void sram_clear();
+void sram_set_all(uint8_t data);
 void sram_init();
 #endif

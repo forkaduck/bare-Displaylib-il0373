@@ -7,15 +7,17 @@
 #include "io.h"
 #include "sram.h"
 
-// Display - Working
-// broken - init
-// broken - sending commands
-
+// --- Tests ---
 // SRAM - Working
 // 0 - Reading and writing
 // 1 - Mode write and read
 // 2 - Sequential writing
 // 3 - Sequential reading
+
+// Display - Working
+// 4 init && direct write to display
+// 5 init && sram as framebuffer
+// 6 init && sram && drawpixel routine
 
 void test(uint8_t testnr)
 {
@@ -40,7 +42,7 @@ void test(uint8_t testnr)
 	case 2:
 		// check if sram_clear resets all data
 		{
-			sram_clear();
+			sram_set_all(0xff);
 
 			for (i = 0; i < SRAM_SIZE; i++) {
 				assert(sram_read_byte(i) == 0x00);
@@ -106,7 +108,7 @@ void test(uint8_t testnr)
 		{
 			uint8_t framebuffer[D_BUFF_SIZE];
 
-			sram_clear();
+			sram_set_all(0xff);
 
 			// set b/w buffer to zebra pattern which splits in the middle
 			for (i = 0; i < D_BUFF_SIZE / 2; i++) {
@@ -124,10 +126,6 @@ void test(uint8_t testnr)
 				framebuffer[i] = 0x33;
 			}
 
-			for (i = D_BUFF_SIZE / 2; i < D_BUFF_SIZE; i++) {
-				framebuffer[i] = 0xff;
-			}
-
 			sram_write_sequence(D_BUFF_SIZE, framebuffer,
 					    D_BUFF_SIZE);
 
@@ -138,28 +136,27 @@ void test(uint8_t testnr)
 	case 6:
 		// test if the drawpixel function works
 		{
-			uint8_t framebuffer[D_BUFF_SIZE];
-			sram_clear();
+			sram_set_all(0xff);
 
-			for (i = 0; i < D_BUFF_SIZE; i++) {
-				framebuffer[i] = 0xff;
-			}
-
-			sram_write_sequence(0x0000, framebuffer, D_BUFF_SIZE);
-
-			for (i = 0; i < D_BUFF_SIZE; i++) {
-				framebuffer[i] = 0xff;
-			}
-
-			sram_write_sequence(D_BUFF_SIZE, framebuffer,
-					    D_BUFF_SIZE);
-
+			// draw vertical line
 			for (i = 0; i < 100; i++) {
-				drawpixel_il0373(8, i, D_WHITE | D_RED);
+				drawpixel_il0373(8, i + 8, D_BLACK | D_RED);
 			}
 
-			for (i = 0; i < 20; i++) {
-				drawpixel_il0373(i + 8, i, D_BLACK | D_NONE);
+			// draw horizontal lines
+			for (i = 0; i < 100; i++) {
+				if (i % 2 == 0) {
+					drawpixel_il0373(i + 8, 8,
+							 D_WHITE | D_RED);
+				} else {
+					drawpixel_il0373(i + 8, 9,
+							 D_BLACK | D_NONE);
+				}
+			}
+
+			// draw one line with an angle of 45 degree
+			for (i = 0; i < 100; i++) {
+				drawpixel_il0373(i + 8, i + 8, D_WHITE | D_RED);
 			}
 
 			push_il0373();

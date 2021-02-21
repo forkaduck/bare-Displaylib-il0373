@@ -119,11 +119,11 @@ void sram_read_sequence(uint16_t addr, uint8_t *data, size_t size)
 }
 
 // --- convenience functions ---
-void sram_clear()
+void sram_set_all(uint8_t data)
 {
 	size_t i;
 	for (i = 0; i < SRAM_SIZE; i++) {
-		sram_write_byte(i, 0x00);
+		sram_write_byte(i, data);
 	}
 }
 
