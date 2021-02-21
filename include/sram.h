@@ -1,7 +1,7 @@
 #ifndef SRAM_H
 #define SRAM_H
 
-#include <inttypes.h>
+#include <stdint.h>
 #include "io.h"
 
 static const uint16_t SRAM_MAX = 0x1FFF;

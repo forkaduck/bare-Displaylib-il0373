@@ -1,7 +1,7 @@
 #ifndef IO_H
 #define IO_H
 
-#include <inttypes.h>
+#include <stdint.h>
 
 // bit_word_addr = bit_band_base + (byte_offset * 32) + (bit_number * 4)
 #define BB_PERIPH(byteoff, bitnum) (PERIPH_BB_BASE + (byteoff - PERIPH_BASE) * 32 + (bitnum * 4))

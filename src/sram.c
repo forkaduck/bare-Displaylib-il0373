@@ -1,5 +1,6 @@
+#include <stdint.h>
+
 #include "stm32f10x.h"
-#include <inttypes.h>
 
 #include "debug.h"
 #include "io.h"

@@ -1,7 +1,8 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
-#include <inttypes.h>
+#include <stdint.h>
+
 #include "io.h"
 
 static const size_t D_HORZRES = 152;
