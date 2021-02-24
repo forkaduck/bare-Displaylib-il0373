@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <stm32f10x.h>
 
-#include "debug.h"
+#include "misc.h"
 #include "io.h"
 
 void spi1_init()

@@ -1,8 +1,9 @@
 #include <stdint.h>
+#include <stddef.h>
 
 #include "stm32f10x.h"
 
-#include "debug.h"
+#include "misc.h"
 #include "io.h"
 #include "sram.h"
 

@@ -1,7 +1,9 @@
 #include <stdint.h>
+#include <stddef.h>
 
 #include <stm32f10x.h>
 
+#include "misc.h"
 #include "display.h"
 #include "io.h"
 
@@ -154,7 +156,6 @@ void push_il0373()
 	}
 }
 
-// TODO remove bitoffset replace with x
 void drawpixel_il0373(uint8_t x, uint8_t y, uint8_t value)
 {
 	// calc bit offset into sram

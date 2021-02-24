@@ -1,12 +1,14 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #include "stm32f10x.h"
 
-#include "debug.h"
+#include "misc.h"
 #include "display.h"
 #include "io.h"
 #include "sram.h"
+#include "graph.h"
 
 // --- Tests ---
 // SRAM - Working
@@ -105,7 +107,7 @@ void test(uint8_t testnr)
 
 	case 5:
 		// write to sram and push the content to the display
-		// result: should show a zebra like pattern
+		// should show a zebra like pattern
 		{
 			uint8_t framebuffer[D_BUFF_SIZE];
 
@@ -136,6 +138,7 @@ void test(uint8_t testnr)
 
 	case 6:
 		// test if the drawpixel function works
+		// by drawing some random lines to test overlapping
 		{
 			sram_set_all(0xff);
 
@@ -166,6 +169,18 @@ void test(uint8_t testnr)
 			push_il0373();
 		}
 		break;
+
+	case 7:
+		// test drawline
+		{
+			sram_set_all(0xff);
+
+			drawline(2, 2, D_HORZRES - 2, D_VERTRES - 2,
+				 D_BLACK | D_NONE);
+
+			drawline(5, 100, 10, 2, D_WHITE | D_RED);
+			push_il0373();
+		}
 	}
 }
 
@@ -178,6 +193,6 @@ int main()
 	init_il0373();
 	__enable_irq();
 
-	test(6);
+	test(7);
 	return 0;
 }

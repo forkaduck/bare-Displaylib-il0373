@@ -14,10 +14,6 @@
 #define RST *((volatile uint32_t*)(BB_PERIPH(GPIOA_BASE + 3 * sizeof(uint32_t), 8)))
 #define BUSY *((volatile uint32_t*)(BB_PERIPH(GPIOA_BASE + 2 * sizeof(uint32_t), 11)))
 
-
-#define size_t uint64_t
-#define NULL ((void*)0)
-
 void spi1_init();
 void spi1_reset_cs();
 void spi1_send(uint8_t data);
