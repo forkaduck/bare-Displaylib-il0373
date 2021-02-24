@@ -10,9 +10,10 @@
 static inline void _plothigh(size_t x1, size_t y1, size_t x2, size_t y2,
 			     uint8_t value)
 {
-	size_t x, y, d;
-	size_t dx = x2 - x1;
-	size_t dy = y2 - y1;
+	size_t x, y;
+	int d;
+	int dx = x2 - x1;
+	int dy = y2 - y1;
 
 	int xi = 1;
 
@@ -39,9 +40,10 @@ static inline void _plothigh(size_t x1, size_t y1, size_t x2, size_t y2,
 static inline void _plotlow(size_t x1, size_t y1, size_t x2, size_t y2,
 			    uint8_t value)
 {
-	size_t y, x, d;
-	size_t dx = x2 - x1;
-	size_t dy = y2 - y1;
+	size_t y, x;
+	int d;
+	int dx = x2 - x1;
+	int dy = y2 - y1;
 
 	int yi = 1;
 

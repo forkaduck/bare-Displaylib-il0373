@@ -171,14 +171,15 @@ void test(uint8_t testnr)
 		break;
 
 	case 7:
-		// test drawline
+		// test drawline by drawing an x
 		{
 			sram_set_all(0xff);
 
 			drawline(2, 2, D_HORZRES - 2, D_VERTRES - 2,
 				 D_BLACK | D_NONE);
 
-			drawline(5, 100, 10, 2, D_WHITE | D_RED);
+			drawline(D_HORZRES - 2, 2, 2, D_VERTRES - 2,
+				 D_WHITE | D_RED);
 			push_il0373();
 		}
 	}
