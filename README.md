@@ -2,29 +2,29 @@
 ## Pinning
 #### PA15..0:
 ###### Display pins
-PA0: ECS
-PA1: D/C
-PA2: (DEAD ON NUCLEO BOARD)SRCS
-PA3: SDCS
+* PA0: ECS
+* PA1: D/C
+* PA2: (DEAD ON NUCLEO BOARD)SRCS
+* PA3: SDCS
 
 ###### SPI
-PA4: SPI1_NSS
-PA5: SPI1_SCK
-PA6: SPI1_MISO
-PA7: SPI1_MOSI
+* PA4: SPI1_NSS
+* PA5: SPI1_SCK
+* PA6: SPI1_MISO
+* PA7: SPI1_MOSI
 
 ###### Display pins
-PA8: RST
+* PA8: RST
 
 ###### UART
-PA9: TX
-PA10: RX
+* PA9: TX
+* PA10: RX
 
 ###### Display pins
-PA11: BUSY
-PA12: new SRCS
+* PA11: BUSY
+* PA12: new SRCS
 
-PA13...15: Reserved
+* PA13...15: Reserved
 
 
 ## Display (Driver: il0373)
