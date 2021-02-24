@@ -14,6 +14,4 @@
 #define assert(a) ((void)0)
 #endif
 
-#define NULL ((void*)0)
-
 #endif
