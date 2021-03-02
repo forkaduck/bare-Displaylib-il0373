@@ -62,12 +62,3 @@ inline uint8_t spi1_rec()
 	}
 	return SPI1->DR;
 }
-
-inline void wait_1u(uint32_t us)
-{
-	uint8_t i, j;
-	for (i = 0; i < us; i++) {
-		for (j = 0; j < 4; j++) {
-		}
-	}
-}

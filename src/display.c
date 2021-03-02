@@ -9,6 +9,15 @@
 
 #include "sram.h"
 
+inline void wait_1u(uint32_t us)
+{
+	uint32_t i, j;
+	for (i = 0; i < us; i++) {
+		for (j = 0; j < 4; j++) {
+		}
+	}
+}
+
 static inline void send_data_il0373(uint8_t data[], size_t datasize)
 {
 	size_t i;
