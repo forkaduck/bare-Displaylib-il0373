@@ -18,6 +18,5 @@ void spi1_init();
 void spi1_reset_cs();
 void spi1_send(uint8_t data);
 uint8_t spi1_rec();
-void wait_1u(uint32_t us);
 
 #endif

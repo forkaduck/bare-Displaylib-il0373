@@ -10,6 +10,8 @@
 #include "sram.h"
 #include "graph.h"
 
+#include "test.h"
+
 // --- Tests ---
 // SRAM - Working
 // 0 - Reading and writing
@@ -182,6 +184,16 @@ void test(uint8_t testnr)
 				 D_WHITE | D_RED);
 			push_il0373();
 		}
+		break;
+
+	case 8:
+		// print 1bit bmp to screen
+		{
+			sram_set_all(0xff);
+			sram_write_sequence(0x0000, img_map, img_size);
+			push_il0373();
+		}
+		break;
 	}
 }
 
@@ -194,6 +206,6 @@ int main()
 	init_il0373();
 	__enable_irq();
 
-	test(7);
+	test(8);
 	return 0;
 }
