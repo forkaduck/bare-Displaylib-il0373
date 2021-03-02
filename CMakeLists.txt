@@ -13,6 +13,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -nostdlib")
 
 # target specific flags
 set(CMAKE_C_FLAGS_DEBUG "-Og -g -gdwarf-3 -gstrict-dwarf")
+set(CMAKE_C_FLAGS_RELEASE "-O3")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 
 # general project settings
