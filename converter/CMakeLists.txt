@@ -9,7 +9,7 @@ set(CMAKE_C_COMPILER "gcc" CACHE PATH "" FORCE)
 set(CMAKE_C_FLAGS "")
 
 # target specific flags
-set(CMAKE_C_FLAGS_DEBUG "-Og")
+set(CMAKE_C_FLAGS_DEBUG "-g")
 set(CMAKE_C_FLAGS_RELEASE "-O3")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 

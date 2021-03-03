@@ -41,6 +41,8 @@ struct bitmap {
 };
 
 
-int parse_img(struct bitmap *bmp, FILE *in);
 void dump_struct(void *strct, size_t size);
+int parse_img(struct bitmap *bmp, FILE *in);
+void close_img(struct bitmap *bmp);
+
 #endif
