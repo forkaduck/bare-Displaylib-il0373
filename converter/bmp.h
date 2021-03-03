@@ -15,8 +15,23 @@ struct bmp_header {
     uint32_t pixel_array_offset;
 }__attribute__((packed));
 
-// The added DIB header (BITMAPINFOHEADER)
+// some colorspace stuff (idk)
+struct bmp_color_in_colorspace {
+    uint32_t x;
+    uint32_t y;
+    uint32_t z;
+}__attribute__((packed));
+
+struct bmp_three_color {
+    struct bmp_color_in_colorspace red;
+    struct bmp_color_in_colorspace green;
+    struct bmp_color_in_colorspace blue;
+}__attribute__((packed));
+
+
+// The added DIB header 
 struct bmp_infoheader {
+    // BITMAPINFOHEADER
     uint32_t header_size;
     uint32_t bmp_width;
     uint32_t bmp_heigth;
@@ -28,6 +43,21 @@ struct bmp_infoheader {
     int32_t vertical_res;
     uint32_t num_colors_in_palette;
     uint32_t _important_colors;
+
+    // BITMAPV5HEADER
+    uint32_t red_mask;
+    uint32_t green_mask;
+    uint32_t blue_mask;
+    uint32_t alpha_mask;
+    uint32_t color_space;
+    struct bmp_three_color endpoints;
+    uint32_t gamma_red;
+    uint32_t gamma_green;
+    uint32_t gamma_blue;
+    uint32_t intent;
+    uint32_t profile_data;
+    uint32_t profile_size;
+    uint32_t _reserved;
 }__attribute__((packed));
 
 // A representation of a bitmap

@@ -151,12 +151,20 @@ int main(int argc, char *argv[])
 		dump_struct(&bmp.header, sizeof(struct bmp_header));
 		dump_struct(&bmp.info, sizeof(struct bmp_infoheader));
 
-		printf("%d x %d\n", bmp.info.bmp_width, bmp.info.bmp_heigth);
-		for (i = 0; i < bmp.image_size; i++) {
+		printf("width: %x / height: %x\n", bmp.info.bmp_width,
+		       bmp.info.bmp_heigth);
+
+		printf("compression: %x\n", bmp.info.compression_method);
+
+		printf("color masks / red: %x / green: %x / blue: %x\n",
+		       bmp.info.red_mask, bmp.info.green_mask,
+		       bmp.info.blue_mask);
+
+		/*for (i = 0; i < bmp.image_size; i++) {
 			printf("%x ", bmp.image[i]);
 		}
 		printf("\n");
-
+*/
 		close_img(&bmp);
 	}
 
