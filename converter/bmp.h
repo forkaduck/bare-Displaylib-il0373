@@ -66,7 +66,7 @@ struct bitmap {
     struct bmp_header header;
     struct bmp_infoheader info;
 
-    size_t image_size; // image size in bytes
+    size_t image_size; // image size in 32b chunks
     uint32_t *image;
 };
 

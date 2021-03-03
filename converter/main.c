@@ -156,15 +156,10 @@ int main(int argc, char *argv[])
 
 		printf("compression: %x\n", bmp.info.compression_method);
 
-		printf("color masks / red: %x / green: %x / blue: %x\n",
-		       bmp.info.red_mask, bmp.info.green_mask,
-		       bmp.info.blue_mask);
+		printf("color masks / alpha: %x / red: %x / green: %x / blue: %x\n",
+		       bmp.info.alpha_mask, bmp.info.red_mask,
+		       bmp.info.green_mask, bmp.info.blue_mask);
 
-		/*for (i = 0; i < bmp.image_size; i++) {
-			printf("%x ", bmp.image[i]);
-		}
-		printf("\n");
-*/
 		close_img(&bmp);
 	}
 
