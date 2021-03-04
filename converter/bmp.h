@@ -74,6 +74,9 @@ struct bitmap {
     struct bmp_header header;
     struct bmp_infoheader info;
 
+    size_t color_table_size;
+    uint32_t *color_table;
+
     size_t image_size; // image size in 32b chunks
     struct bmp_image_member *image;
 };

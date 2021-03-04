@@ -216,6 +216,7 @@ int main(int argc, char *argv[])
 
 		{
 			size_t j;
+			size_t offset;
 			size_t out_size = args.res_width * args.res_height / 8;
 
 			uint32_t max_thresh_black = bmp.info.red_mask |
@@ -229,13 +230,14 @@ int main(int argc, char *argv[])
 			printf("Checking black/white data...\n");
 
 			// write b/w data from which average of rgb data is over threshold
+			offset = 0;
 			for (i = 0; i < out_size; i++) {
 				for (j = 0; j < 8; j++) {
 					uint8_t op = 0x0;
 					uint32_t current_thresh_black =
-						((bmp.image[j + i].red +
-						  bmp.image[j + i].green +
-						  bmp.image[j + i].blue) /
+						((bmp.image[offset].red +
+						  bmp.image[offset].green +
+						  bmp.image[offset].blue) /
 						 3);
 
 					if (current_thresh_black <=
@@ -244,6 +246,7 @@ int main(int argc, char *argv[])
 						op = 0x1;
 					}
 					buffer[i] |= op << (7 - j);
+					offset++;
 				}
 			}
 
