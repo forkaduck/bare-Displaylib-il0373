@@ -39,7 +39,7 @@ int parse_img(struct bitmap *bmp, FILE *in)
 
 	// calculate size and allocate array
 	bmp->image_size = (bmp->info.colordepth * bmp->info.bmp_width / 32) *
-			  bmp->info.bmp_heigth;
+			  bmp->info.bmp_height;
 
 	bmp->image =
 		malloc(bmp->image_size * 4 * sizeof(struct bmp_image_member));

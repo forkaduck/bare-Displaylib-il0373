@@ -34,7 +34,7 @@ struct bmp_infoheader {
     // BITMAPINFOHEADER
     uint32_t header_size;
     uint32_t bmp_width;
-    uint32_t bmp_heigth;
+    uint32_t bmp_height;
     uint16_t num_planes;
     uint16_t colordepth;
     uint32_t compression_method;

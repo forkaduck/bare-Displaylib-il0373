@@ -18,7 +18,12 @@
 struct args {
 	char input[PATH_MAX];
 	char output[PATH_MAX];
-	uint32_t red_thresh;
+
+	uint32_t thresh_red;
+	uint32_t thresh_black;
+
+	uint32_t res_width;
+	uint32_t res_height;
 };
 
 size_t strlen_s(char *input, size_t max)
@@ -42,21 +47,51 @@ int handle_args(struct args *args, int argc, char *argv[])
 		case 'i':
 			memcpy(args->input, argv[i + 1],
 			       strlen_s(argv[i + 1], PATH_MAX));
+			printf("Input:%s\n", args->input);
 			break;
 
 		case 'o':
 			memcpy(args->output, argv[i + 1],
 			       strlen_s(argv[i + 1], PATH_MAX));
+			printf("Output:%s\n", args->output);
+			break;
+
+		case 't':
+			switch (argv[i][2]) {
+			case 'r':
+				args->thresh_red =
+					strtoll(argv[i + 1], NULL, 0);
+				printf("Threshold red:%d\n", args->thresh_red);
+				break;
+
+			case 'b':
+				args->thresh_black =
+					strtoll(argv[i + 1], NULL, 0);
+				printf("Threshold black:%d\n",
+				       args->thresh_black);
+				break;
+			}
 			break;
 
 		case 'r':
-			args->red_thresh = strtoll(argv[i + 1], NULL, 0);
+			switch (argv[i][2]) {
+			case 'w':
+				args->res_width = strtoll(argv[i + 1], NULL, 0);
+				printf("Target width:%d\n", args->res_width);
+				break;
 
-			break;
+			case 'h':
+				args->res_height =
+					strtoll(argv[i + 1], NULL, 0);
+				printf("Target height:%d\n", args->res_height);
+				break;
+			}
 		}
 	}
 
-	if (*args->input == '\0' || *args->output == '\0') {
+	if (*args->input == '\0' || *args->output == '\0' ||
+	    args->thresh_red == 0 || args->thresh_black == 0 ||
+	    args->res_width == 0 || args->res_height == 0) {
 		printf("Not enougth arguments given!\n");
 		return 1;
 	}
@@ -135,9 +170,6 @@ int main(int argc, char *argv[])
 		printf("handle_args failed! (%d)\n", rv);
 		return 1;
 	}
-
-	printf("Input:%s\nOutput:%s\n", args.input, args.output);
-
 	rv = open_files(&ctx, args);
 	if (rv) {
 		printf("open_files failed! (%d)\n", rv);
@@ -145,9 +177,11 @@ int main(int argc, char *argv[])
 	}
 
 	{
+		uint8_t *buffer;
 		size_t i;
 		struct bitmap bmp;
 
+		printf("Parsing image...\n");
 		rv = parse_img(&bmp, ctx.in);
 		if (rv) {
 			printf("parse_img failed! (%d)\n", rv);
@@ -158,7 +192,7 @@ int main(int argc, char *argv[])
 		dump_struct(&bmp.info, sizeof(struct bmp_infoheader));
 
 		printf("width: %x / height: %x\n", bmp.info.bmp_width,
-		       bmp.info.bmp_heigth);
+		       bmp.info.bmp_height);
 
 		printf("compression: %x\n", bmp.info.compression_method);
 
@@ -166,13 +200,68 @@ int main(int argc, char *argv[])
 		       bmp.info.alpha_mask, bmp.info.red_mask,
 		       bmp.info.green_mask, bmp.info.blue_mask);
 
+		printf("\nFirst 10 32b chunks:\n");
 		for (i = 0; i < 10; i++) {
 			printf("none: %x / alpha: %x / red: %x / green: %x / blue: %x\n",
 			       bmp.image[i].none, bmp.image[i].alpha,
 			       bmp.image[i].red, bmp.image[i].green,
 			       bmp.image[i].blue);
 		}
-		close_img(&bmp);
+
+		buffer = malloc(bmp.image_size * 4);
+		if (buffer == NULL) {
+			perror("malloc failed");
+			return 4;
+		}
+
+		{
+			size_t j;
+			size_t out_size = args.res_width * args.res_height / 8;
+
+			uint32_t max_thresh_black = bmp.info.red_mask |
+						    bmp.info.green_mask |
+						    bmp.info.blue_mask;
+
+			uint32_t mappen_thresh_black =
+				(args.thresh_black / 100) * max_thresh_black;
+
+			printf("Checking black/white data...\n");
+
+			// write b/w data from which average of rgb data is over threshold
+			for (i = 0; i < out_size / 8; i++) {
+				for (j = 0; j < 8; j++) {
+					uint8_t op = 0x0;
+					uint32_t current_thresh_black =
+						((bmp.image[j + i].red +
+						  bmp.image[j + i].green +
+						  bmp.image[j + i].blue) /
+						 3);
+
+					if (current_thresh_black <=
+					    args.thresh_black) {
+						// write white
+						op = 0x1;
+					}
+					buffer[i] |= op << (8 - j);
+				}
+			}
+
+			/*printf("Checking red data...\n");
+
+			// write red channel data which is over threshold to mem loc: D_BUFF_SIZE = width * height / 8
+			for (i = out_size; i < out_size * 2; i++) {
+				if (bmp.image[i].red > args.thresh_red) {
+					buffer[i] = 0x0;
+				} else {
+					buffer[i] = 0x1;
+				}
+			}*/
+
+			printf("Writing image data to file...\n");
+			print_file(ctx.out, buffer, out_size, args.res_width,
+				   args.res_height);
+			close_img(&bmp);
+		}
 	}
 
 	close_files(&ctx);
