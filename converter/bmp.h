@@ -60,6 +60,14 @@ struct bmp_infoheader {
     uint32_t _reserved;
 }__attribute__((packed));
 
+struct bmp_image_member {
+    uint32_t none;
+    uint32_t alpha;
+    uint32_t green;
+    uint32_t red;
+    uint32_t blue;
+};
+
 // A representation of a bitmap
 // At the moment only mandatory fields are programmed
 struct bitmap {
@@ -67,9 +75,8 @@ struct bitmap {
     struct bmp_infoheader info;
 
     size_t image_size; // image size in 32b chunks
-    uint32_t *image;
+    struct bmp_image_member *image;
 };
-
 
 void dump_struct(void *strct, size_t size);
 int parse_img(struct bitmap *bmp, FILE *in);

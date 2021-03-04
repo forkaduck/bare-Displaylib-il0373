@@ -18,6 +18,7 @@
 struct args {
 	char input[PATH_MAX];
 	char output[PATH_MAX];
+	uint32_t red_thresh;
 };
 
 size_t strlen_s(char *input, size_t max)
@@ -46,6 +47,11 @@ int handle_args(struct args *args, int argc, char *argv[])
 		case 'o':
 			memcpy(args->output, argv[i + 1],
 			       strlen_s(argv[i + 1], PATH_MAX));
+			break;
+
+		case 'r':
+			args->red_thresh = strtoll(argv[i + 1], NULL, 0);
+
 			break;
 		}
 	}
@@ -160,6 +166,12 @@ int main(int argc, char *argv[])
 		       bmp.info.alpha_mask, bmp.info.red_mask,
 		       bmp.info.green_mask, bmp.info.blue_mask);
 
+		for (i = 0; i < 10; i++) {
+			printf("none: %x / alpha: %x / red: %x / green: %x / blue: %x\n",
+			       bmp.image[i].none, bmp.image[i].alpha,
+			       bmp.image[i].red, bmp.image[i].green,
+			       bmp.image[i].blue);
+		}
 		close_img(&bmp);
 	}
 
