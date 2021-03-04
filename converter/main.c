@@ -222,13 +222,14 @@ int main(int argc, char *argv[])
 						    bmp.info.green_mask |
 						    bmp.info.blue_mask;
 
-			uint32_t mappen_thresh_black =
-				(args.thresh_black / 100) * max_thresh_black;
+			uint32_t mapped_thresh_black =
+				((double)args.thresh_black / 100.0f) *
+				(double)max_thresh_black;
 
 			printf("Checking black/white data...\n");
 
 			// write b/w data from which average of rgb data is over threshold
-			for (i = 0; i < out_size / 8; i++) {
+			for (i = 0; i < out_size; i++) {
 				for (j = 0; j < 8; j++) {
 					uint8_t op = 0x0;
 					uint32_t current_thresh_black =
@@ -238,11 +239,11 @@ int main(int argc, char *argv[])
 						 3);
 
 					if (current_thresh_black <=
-					    args.thresh_black) {
+					    mapped_thresh_black) {
 						// write white
 						op = 0x1;
 					}
-					buffer[i] |= op << (8 - j);
+					buffer[i] |= op << (7 - j);
 				}
 			}
 
