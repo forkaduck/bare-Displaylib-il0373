@@ -6,6 +6,8 @@
 
 // The underscore (_) marks useless fields in headers
 
+static const size_t bmp_header_size = 14;
+
 // The Bitmap file header
 struct bmp_header {
     uint16_t header_field;
@@ -62,7 +64,6 @@ struct bmp_infoheader {
 
 struct bmp_image_member {
     uint32_t none;
-    uint32_t alpha;
     uint32_t green;
     uint32_t red;
     uint32_t blue;
@@ -73,6 +74,10 @@ struct bmp_image_member {
 struct bitmap {
     struct bmp_header header;
     struct bmp_infoheader info;
+
+    uint8_t red_offset;
+    uint8_t green_offset;
+    uint8_t blue_offset;
 
     size_t color_table_size;
     uint32_t *color_table;

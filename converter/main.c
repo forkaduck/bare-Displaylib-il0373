@@ -194,19 +194,24 @@ int main(int argc, char *argv[])
 		printf("width: %x / height: %x\n", bmp.info.bmp_width,
 		       bmp.info.bmp_height);
 
+		printf("colordepth: %x\n", bmp.info.colordepth);
+
 		printf("compression: %x\n", bmp.info.compression_method);
 
-		printf("color masks / alpha: %x / red: %x / green: %x / blue: %x\n",
-		       bmp.info.alpha_mask, bmp.info.red_mask,
-		       bmp.info.green_mask, bmp.info.blue_mask);
+		printf("color masks / red: %x / green: %x / blue: %x\n",
+		       bmp.info.red_mask, bmp.info.green_mask,
+		       bmp.info.blue_mask);
 
-		printf("\nFirst 10 32b chunks:\n");
-		for (i = 0; i < 10; i++) {
-			printf("none: %x / alpha: %x / red: %x / green: %x / blue: %x\n",
-			       bmp.image[i].none, bmp.image[i].alpha,
-			       bmp.image[i].red, bmp.image[i].green,
-			       bmp.image[i].blue);
+		printf("\nFirst 32b chunk:\n");
+		printf("none: %x / red: %x / green: %x / blue: %x\n",
+		       bmp.image[0].none, bmp.image[0].red, bmp.image[0].green,
+		       bmp.image[0].blue);
+
+		printf("Color table sample:\n");
+		for (i = 0; i < 5; i++) {
+			printf("0x%x ", bmp.color_table[i]);
 		}
+		printf("\n");
 
 		buffer = malloc(bmp.image_size * 4);
 		if (buffer == NULL) {
@@ -219,14 +224,11 @@ int main(int argc, char *argv[])
 			size_t offset;
 			size_t out_size = args.res_width * args.res_height / 8;
 
-			uint32_t max_thresh_black = bmp.info.red_mask |
-						    bmp.info.green_mask |
-						    bmp.info.blue_mask;
-
 			uint32_t mapped_thresh_black =
 				((double)args.thresh_black / 100.0f) *
-				(double)max_thresh_black;
+				(double)bmp.color_table_size;
 
+			printf("Mapped threshold:%d\n", mapped_thresh_black);
 			printf("Checking black/white data...\n");
 
 			// write b/w data from which average of rgb data is over threshold
@@ -266,6 +268,7 @@ int main(int argc, char *argv[])
 				   args.res_height);
 			close_img(&bmp);
 		}
+		free(buffer);
 	}
 
 	close_files(&ctx);
