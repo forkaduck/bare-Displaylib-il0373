@@ -64,6 +64,7 @@ struct bmp_infoheader {
 
 struct bmp_image_member {
     uint32_t none;
+    uint32_t alpha;
     uint32_t green;
     uint32_t red;
     uint32_t blue;
@@ -75,9 +76,10 @@ struct bitmap {
     struct bmp_header header;
     struct bmp_infoheader info;
 
-    uint8_t red_offset;
-    uint8_t green_offset;
-    uint8_t blue_offset;
+    size_t alpha_offset;
+    size_t red_offset;
+    size_t green_offset;
+    size_t blue_offset;
 
     size_t color_table_size;
     uint32_t *color_table;

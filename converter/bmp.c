@@ -47,12 +47,13 @@ int parse_img(struct bitmap *bmp, FILE *in)
 		goto error_exit;
 	}
 
-	// at the moment only the bitfields compression method is supported
+	// at the moment only the bitfields compression method is supported (barely)
 	if (bmp->info.compression_method != 0x3) {
 		rv = 3;
 		goto error_exit;
 	}
 
+	bmp->alpha_offset = __builtin_ffs(bmp->info.red_mask) - 1;
 	bmp->red_offset = __builtin_ffs(bmp->info.red_mask) - 1;
 	bmp->green_offset = __builtin_ffs(bmp->info.green_mask) - 1;
 	bmp->blue_offset = __builtin_ffs(bmp->info.blue_mask) - 1;
@@ -63,6 +64,7 @@ int parse_img(struct bitmap *bmp, FILE *in)
 		rv = 4;
 		goto error_exit;
 	}
+
 	// get color table and size
 	if (bmp->info.num_colors_in_palette) {
 		bmp->color_table_size = bmp->info.num_colors_in_palette;
@@ -75,17 +77,23 @@ int parse_img(struct bitmap *bmp, FILE *in)
 	}
 
 	// color table is actualy only 3 byte big
-	bmp->color_table = malloc(bmp->color_table_size * 3);
+	bmp->color_table = malloc(bmp->color_table_size * 4);
 	if (bmp->color_table == NULL) {
 		rv = 5;
 		goto error_exit;
 	}
 
-	// read color table
-	if (fread(bmp->color_table, 3, bmp->color_table_size, in) !=
-	    bmp->color_table_size) {
-		rv = 6;
-		goto error_exit;
+	// read color table width padding of 1 byte
+	for (i = 0; i < bmp->color_table_size; i++) {
+		uint32_t entry;
+
+		// read color table
+		if (fread(&entry, 3, 1, in) != 1) {
+			rv = 6;
+			goto error_exit;
+		}
+
+		bmp->color_table[i] = entry;
 	}
 
 	// --- read image array ---
@@ -96,19 +104,17 @@ int parse_img(struct bitmap *bmp, FILE *in)
 	}
 
 	// calculate size and allocate array for the offset data
-
 	{
-		size_t width;
+		size_t color_width;
 
-		width = bmp->info.bmp_width;
+		color_width = bmp->info.colordepth * bmp->info.bmp_width;
 
 		// compensate for padding in size
-		if (width % 32 != 0) {
-			width += 32 - (width % 32);
+		if (color_width % 32 != 0) {
+			color_width += 32 - (color_width % 32);
 		}
 
-		bmp->image_size = (bmp->info.colordepth * width / 32) *
-				  bmp->info.bmp_height;
+		bmp->image_size = (color_width / 32) * bmp->info.bmp_height;
 
 		bmp->image = malloc(bmp->image_size * 4 *
 				    sizeof(struct bmp_image_member));
@@ -122,6 +128,7 @@ int parse_img(struct bitmap *bmp, FILE *in)
 		for (i = 0; i < bmp->image_size; i++) {
 			uint32_t buffer;
 
+			uint32_t alpha_index;
 			uint32_t red_index;
 			uint32_t green_index;
 			uint32_t blue_index;
@@ -133,6 +140,9 @@ int parse_img(struct bitmap *bmp, FILE *in)
 			}
 
 			// calculate index into color table
+			alpha_index = (bmp->info.alpha_mask & buffer) >>
+				      bmp->alpha_offset;
+
 			red_index = (bmp->info.red_mask & buffer) >>
 				    bmp->red_offset;
 
@@ -142,19 +152,28 @@ int parse_img(struct bitmap *bmp, FILE *in)
 			blue_index = (bmp->info.blue_mask & buffer) >>
 				     bmp->blue_offset;
 
+			//printf("buffer:%x\n", buffer);
+			//printf("%ld: r:%x g:%x b:%x\n", i, red_index,
+			//       green_index, blue_index);
+
 			// check if any index is bigger than the maximum index
-			if (red_index > bmp->color_table_size ||
-			    green_index > bmp->color_table_size ||
-			    blue_index > bmp->color_table_size) {
-				printf("Index out of bounds!\nred:%d / green:%d / blue:%d / size:%ld\n",
-				       red_index, green_index, blue_index,
-				       bmp->color_table_size);
+			if (alpha_index >= bmp->color_table_size ||
+			    red_index >= bmp->color_table_size ||
+			    green_index >= bmp->color_table_size ||
+			    blue_index >= bmp->color_table_size) {
+				printf("Index out of bounds!\nalpha:%d / red:%d / green:%d / blue:%d / size:%ld\n",
+				       alpha_index, red_index, green_index,
+				       blue_index, bmp->color_table_size);
 				rv = 10;
 				goto error_exit;
 			}
 
 			// fetch color from colortable
 			bmp->image[i].none = buffer;
+
+			bmp->image[i].alpha = (bmp->color_table[alpha_index] &
+					       bmp->info.alpha_mask) >>
+					      bmp->alpha_offset;
 
 			bmp->image[i].red = (bmp->color_table[red_index] &
 					     bmp->info.red_mask) >>

@@ -165,6 +165,8 @@ int main(int argc, char *argv[])
 		rv = parse_img(&bmp, in);
 		if (rv) {
 			printf("parse_img failed! (%d)\n", rv);
+			printf("\tferror:%d\n", ferror(in));
+			perror("\terrno");
 			return 3;
 		}
 
@@ -178,26 +180,27 @@ int main(int argc, char *argv[])
 
 		printf("compression: %x\n", bmp.info.compression_method);
 
-		printf("color masks / red: %x / green: %x / blue: %x\n",
-		       bmp.info.red_mask, bmp.info.green_mask,
-		       bmp.info.blue_mask);
+		printf("color masks / alpha: %x / red: %x / green: %x / blue: %x\n",
+		       bmp.info.alpha_mask, bmp.info.red_mask,
+		       bmp.info.green_mask, bmp.info.blue_mask);
 
-		printf("\nFirst 32b chunk:\n");
-		printf("none: %x / red: %x / green: %x / blue: %x\n",
-		       bmp.image[0].none, bmp.image[0].red, bmp.image[0].green,
-		       bmp.image[0].blue);
+		printf("color table size:%ld\n", bmp.color_table_size);
 
 		printf("Color table sample:\n");
-		for (i = 0; i < 5; i++) {
-			printf("0x%x ", bmp.color_table[i]);
-		}
-		printf("\n");
+
+		printf("0x%x 0x%x\n", bmp.color_table[0], bmp.color_table[1]);
+
+		printf("\nFirst 32b chunk:\n");
+		printf("none: %x / alpha:%x / red: %x / green: %x / blue: %x\n",
+		       bmp.image[0].none, bmp.image[0].alpha, bmp.image[0].red,
+		       bmp.image[0].green, bmp.image[0].blue);
 
 		buffer = malloc(bmp.image_size * 4);
 		if (buffer == NULL) {
 			perror("malloc failed");
 			return 4;
 		}
+		memset(buffer, 0, bmp.image_size * 4);
 
 		{
 			size_t j;
@@ -211,8 +214,6 @@ int main(int argc, char *argv[])
 			uint32_t mapped_thresh_red =
 				((double)args.thresh_red / 100.0f) *
 				(double)bmp.color_table_size;
-
-			memset(buffer, 0, out_size * 2);
 
 			printf("Mapped b/w thresh:%d\n", mapped_thresh_black);
 			printf("Mapped red thresh:%d\n", mapped_thresh_red);
@@ -250,8 +251,8 @@ int main(int argc, char *argv[])
 			}
 
 			printf("Writing image data to file...\n");
-			print_file(out, buffer, out_size, args.res_width,
-				   args.res_height);
+			print_file(out, buffer, out_size * 2, args.res_width,
+				   args.res_height * 2);
 			close_img(&bmp);
 		}
 		free(buffer);
