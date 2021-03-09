@@ -53,17 +53,16 @@ int parse_img(struct bitmap *bmp, FILE *in)
 		goto error_exit;
 	}
 
+	bmp->red_offset = __builtin_ffs(bmp->info.red_mask) - 1;
+	bmp->green_offset = __builtin_ffs(bmp->info.green_mask) - 1;
+	bmp->blue_offset = __builtin_ffs(bmp->info.blue_mask) - 1;
+
 	// --- read color table ---
 	// jump to the start of the color table
 	if (fseek(in, bmp->info.header_size + bmp_header_size, SEEK_SET)) {
 		rv = 4;
 		goto error_exit;
 	}
-
-	bmp->red_offset = __builtin_ffs(bmp->info.red_mask) - 1;
-	bmp->green_offset = __builtin_ffs(bmp->info.green_mask) - 1;
-	bmp->blue_offset = __builtin_ffs(bmp->info.blue_mask) - 1;
-
 	// get color table and size
 	if (bmp->info.num_colors_in_palette) {
 		bmp->color_table_size = bmp->info.num_colors_in_palette;
@@ -75,14 +74,15 @@ int parse_img(struct bitmap *bmp, FILE *in)
 			    bmp->info.blue_mask >> bmp->blue_offset);
 	}
 
-	bmp->color_table = malloc(bmp->color_table_size * 4);
+	// color table is actualy only 3 byte big
+	bmp->color_table = malloc(bmp->color_table_size * 3);
 	if (bmp->color_table == NULL) {
 		rv = 5;
 		goto error_exit;
 	}
 
 	// read color table
-	if (fread(bmp->color_table, 4, bmp->color_table_size, in) !=
+	if (fread(bmp->color_table, 3, bmp->color_table_size, in) !=
 	    bmp->color_table_size) {
 		rv = 6;
 		goto error_exit;
@@ -96,19 +96,29 @@ int parse_img(struct bitmap *bmp, FILE *in)
 	}
 
 	// calculate size and allocate array for the offset data
-	bmp->image_size = (bmp->info.colordepth * bmp->info.bmp_width / 32) *
-			  bmp->info.bmp_height;
 
-	bmp->image =
-		malloc(bmp->image_size * 4 * sizeof(struct bmp_image_member));
-	if (bmp->image == NULL) {
-		rv = 8;
-		goto error_exit;
-	}
-
-	// convert the 32b chunk into a bmp_image_member
-	// and add that to the array
 	{
+		size_t width;
+
+		width = bmp->info.bmp_width;
+
+		// compensate for padding in size
+		if (width % 32 != 0) {
+			width += 32 - (width % 32);
+		}
+
+		bmp->image_size = (bmp->info.colordepth * width / 32) *
+				  bmp->info.bmp_height;
+
+		bmp->image = malloc(bmp->image_size * 4 *
+				    sizeof(struct bmp_image_member));
+		if (bmp->image == NULL) {
+			rv = 8;
+			goto error_exit;
+		}
+
+		// convert the 32b chunk into a bmp_image_member
+		// and add that to the array
 		for (i = 0; i < bmp->image_size; i++) {
 			uint32_t buffer;
 
@@ -136,6 +146,9 @@ int parse_img(struct bitmap *bmp, FILE *in)
 			if (red_index > bmp->color_table_size ||
 			    green_index > bmp->color_table_size ||
 			    blue_index > bmp->color_table_size) {
+				printf("Index out of bounds!\nred:%d / green:%d / blue:%d / size:%ld\n",
+				       red_index, green_index, blue_index,
+				       bmp->color_table_size);
 				rv = 10;
 				goto error_exit;
 			}
