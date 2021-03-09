@@ -98,34 +98,6 @@ int handle_args(struct args *args, int argc, char *argv[])
 	return 0;
 }
 
-struct bmpctx {
-	FILE *in, *out;
-};
-
-int open_files(struct bmpctx *ctx, struct args args)
-{
-	// open input and output file
-	ctx->in = fopen(args.input, "rb");
-	if (ctx->in == NULL) {
-		perror("fopen failed");
-		return 1;
-	}
-
-	ctx->out = fopen(args.output, "wb");
-	if (ctx->out == NULL) {
-		perror("fopen failed");
-		return 2;
-	}
-
-	return 0;
-}
-
-void close_files(struct bmpctx *ctx)
-{
-	fclose(ctx->in);
-	fclose(ctx->out);
-}
-
 void print_file(FILE *out, uint8_t *data, size_t size, size_t width,
 		size_t height)
 {
@@ -161,7 +133,7 @@ int main(int argc, char *argv[])
 {
 	int rv;
 	struct args args;
-	struct bmpctx ctx;
+	FILE *in, *out;
 
 	memset(&args, 0, sizeof(struct args));
 
@@ -170,9 +142,17 @@ int main(int argc, char *argv[])
 		printf("handle_args failed! (%d)\n", rv);
 		return 1;
 	}
-	rv = open_files(&ctx, args);
-	if (rv) {
-		printf("open_files failed! (%d)\n", rv);
+
+	// open input and output file
+	in = fopen(args.input, "rb");
+	if (in == NULL) {
+		perror("fopen failed");
+		return 1;
+	}
+
+	out = fopen(args.output, "wb");
+	if (out == NULL) {
+		perror("fopen failed");
 		return 2;
 	}
 
@@ -182,7 +162,7 @@ int main(int argc, char *argv[])
 		struct bitmap bmp;
 
 		printf("Parsing image...\n");
-		rv = parse_img(&bmp, ctx.in);
+		rv = parse_img(&bmp, in);
 		if (rv) {
 			printf("parse_img failed! (%d)\n", rv);
 			return 3;
@@ -228,13 +208,21 @@ int main(int argc, char *argv[])
 				((double)args.thresh_black / 100.0f) *
 				(double)bmp.color_table_size;
 
-			printf("Mapped threshold:%d\n", mapped_thresh_black);
-			printf("Checking black/white data...\n");
+			uint32_t mapped_thresh_red =
+				((double)args.thresh_red / 100.0f) *
+				(double)bmp.color_table_size;
+
+			memset(buffer, 0, out_size * 2);
+
+			printf("Mapped b/w thresh:%d\n", mapped_thresh_black);
+			printf("Mapped red thresh:%d\n", mapped_thresh_red);
+			printf("Transforming image data...\n");
 
 			// write b/w data from which average of rgb data is over threshold
 			offset = 0;
 			for (i = 0; i < out_size; i++) {
 				for (j = 0; j < 8; j++) {
+					// transforming b/w data
 					uint8_t op = 0x0;
 					uint32_t current_thresh_black =
 						((bmp.image[offset].red +
@@ -248,29 +236,28 @@ int main(int argc, char *argv[])
 						op = 0x1;
 					}
 					buffer[i] |= op << (7 - j);
+
+					// transforming red data
+					op = 0x0;
+					if (bmp.image[offset].red <=
+					    mapped_thresh_red) {
+						op = 0x1;
+					}
+					buffer[i + out_size] |= op << (7 - j);
+
 					offset++;
 				}
 			}
 
-			/*printf("Checking red data...\n");
-
-			// write red channel data which is over threshold to mem loc: D_BUFF_SIZE = width * height / 8
-			for (i = out_size; i < out_size * 2; i++) {
-				if (bmp.image[i].red > args.thresh_red) {
-					buffer[i] = 0x0;
-				} else {
-					buffer[i] = 0x1;
-				}
-			}*/
-
 			printf("Writing image data to file...\n");
-			print_file(ctx.out, buffer, out_size, args.res_width,
+			print_file(out, buffer, out_size, args.res_width,
 				   args.res_height);
 			close_img(&bmp);
 		}
 		free(buffer);
 	}
 
-	close_files(&ctx);
-	return 0;
+	fclose(in);
+	fclose(out);
+	return rv;
 }

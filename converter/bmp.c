@@ -26,30 +26,38 @@ void dump_struct(void *strct, size_t size)
 
 int parse_img(struct bitmap *bmp, FILE *in)
 {
+	int rv;
 	size_t i;
+
+	bmp->color_table = NULL;
+	bmp->image = NULL;
 
 	// --- read the headers ---
 	// read bitmap image header
 	if (fread(&bmp->header, 1, sizeof(struct bmp_header), in) !=
 	    sizeof(struct bmp_header)) {
-		return 1;
+		rv = 1;
+		goto error_exit;
 	}
 
 	// read the info header
 	if (fread(&bmp->info, 1, sizeof(struct bmp_infoheader), in) !=
 	    sizeof(struct bmp_infoheader)) {
-		return 2;
+		rv = 2;
+		goto error_exit;
 	}
 
 	// at the moment only the bitfields compression method is supported
 	if (bmp->info.compression_method != 0x3) {
-		return 3;
+		rv = 3;
+		goto error_exit;
 	}
 
 	// --- read color table ---
 	// jump to the start of the color table
 	if (fseek(in, bmp->info.header_size + bmp_header_size, SEEK_SET)) {
-		return 4;
+		rv = 4;
+		goto error_exit;
 	}
 
 	bmp->red_offset = __builtin_ffs(bmp->info.red_mask) - 1;
@@ -69,21 +77,22 @@ int parse_img(struct bitmap *bmp, FILE *in)
 
 	bmp->color_table = malloc(bmp->color_table_size * 4);
 	if (bmp->color_table == NULL) {
-		return 5;
+		rv = 5;
+		goto error_exit;
 	}
 
 	// read color table
 	if (fread(bmp->color_table, 4, bmp->color_table_size, in) !=
 	    bmp->color_table_size) {
-		free(bmp->color_table);
-		return 6;
+		rv = 6;
+		goto error_exit;
 	}
 
 	// --- read image array ---
 	// jump to the image array
 	if (fseek(in, bmp->header.pixel_array_offset, SEEK_SET)) {
-		free(bmp->color_table);
-		return 7;
+		rv = 7;
+		goto error_exit;
 	}
 
 	// calculate size and allocate array for the offset data
@@ -93,8 +102,8 @@ int parse_img(struct bitmap *bmp, FILE *in)
 	bmp->image =
 		malloc(bmp->image_size * 4 * sizeof(struct bmp_image_member));
 	if (bmp->image == NULL) {
-		free(bmp->color_table);
-		return 8;
+		rv = 8;
+		goto error_exit;
 	}
 
 	// convert the 32b chunk into a bmp_image_member
@@ -109,9 +118,8 @@ int parse_img(struct bitmap *bmp, FILE *in)
 
 			// read one image chunk
 			if (fread(&buffer, 4, 1, in) != 1) {
-				free(bmp->image);
-				free(bmp->color_table);
-				return 9;
+				rv = 9;
+				goto error_exit;
 			}
 
 			// calculate index into color table
@@ -123,6 +131,14 @@ int parse_img(struct bitmap *bmp, FILE *in)
 
 			blue_index = (bmp->info.blue_mask & buffer) >>
 				     bmp->blue_offset;
+
+			// check if any index is bigger than the maximum index
+			if (red_index > bmp->color_table_size ||
+			    green_index > bmp->color_table_size ||
+			    blue_index > bmp->color_table_size) {
+				rv = 10;
+				goto error_exit;
+			}
 
 			// fetch color from colortable
 			bmp->image[i].none = buffer;
@@ -140,15 +156,24 @@ int parse_img(struct bitmap *bmp, FILE *in)
 					     bmp->blue_offset;
 		}
 	}
-
 	return 0;
+
+error_exit:
+	close_img(bmp);
+	return rv;
 }
 
 void close_img(struct bitmap *bmp)
 {
-	free(bmp->image);
-	bmp->image_size = 0;
+	if (bmp->image != NULL) {
+		free(bmp->image);
+		bmp->image = NULL;
+		bmp->image_size = 0;
+	}
 
-	free(bmp->color_table);
-	bmp->color_table_size = 0;
+	if (bmp->color_table != NULL) {
+		free(bmp->color_table);
+		bmp->color_table = NULL;
+		bmp->color_table_size = 0;
+	}
 }
