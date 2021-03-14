@@ -26,6 +26,7 @@ void spi1_init()
 	}
 }
 
+// waits for the spi hardware and resets all cs lines
 inline void spi1_reset_cs()
 {
 	while (SPI1->SR & SPI_SR_BSY) {

@@ -67,6 +67,7 @@ static inline void _plotlow(size_t x1, size_t y1, size_t x2, size_t y2,
 	}
 }
 
+// unify both drawing routines
 void drawline(size_t x1, size_t y1, size_t x2, size_t y2, uint8_t value)
 {
 	if ((y2 - y1) < (x2 - x1)) {

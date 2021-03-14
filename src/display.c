@@ -102,31 +102,31 @@ void init_il0373()
 		while (BUSY) {
 		}
 
-		// setup panel settings TODO
-		// Res 160x296 / LUT from reg / BW / Gate Scan up / Shift right / Booster on
+		// setup panel settings
+		// Res 160x296 / LUT from reg / BWR / Gate Scan up / Shift right / Booster on
 		// / Soft reset on
-		wr = (struct wrdata){ .data = { 0xcf } };
+		wr = (struct wrdata){ .data = { 0b11001111 } };
 		send_il0373(D_PSR, wr.data, 1);
 
-		// setup Vcom and data interval (in BW mode) TODO
-		// VBD = 01b LUTWB / DDX = 11b / CDI = 0111b (10 interval)
-		wr = (struct wrdata){ .data = { 0x37 } };
+		// setup Vcom and data interval (in BW mode)
+		// VBD = 00b ?? / DDX = 11b / CDI = 0111b (10 interval)
+		wr = (struct wrdata){ .data = { 0b00110111 } };
 		send_il0373(D_CDI, wr.data, 1);
 
-		// setup pll TODO
+		// setup pll
 		// M = 111b / N = 100 -> 50Hz Frame Rate
-		wr = (struct wrdata){ .data = { 0x29 } };
+		wr = (struct wrdata){ .data = { 0b00111100 } };
 		send_il0373(D_PLL, wr.data, 1);
 
-		// vcm_dc TODO
+		// vcm_dc
 		// VCOM_DC = 0.9V
-		wr = (struct wrdata){ .data = { 0x0A } };
+		wr = (struct wrdata){ .data = { 0b00001010 } };
 		send_il0373(D_VDCS, wr.data, 1);
 
-		// overwrite resolution from panel settings TODO
-		// HRES = c8 (200)
+		// overwrite resolution from panel settings
+		// HRES = c8 (D_HORZRES)
 		// VRES High = 0
-		// VRES = c8 (200)
+		// VRES = c8 (D_VERTRES)
 		wr = (struct wrdata){ .data = { D_VERTRES & 0xff,
 						(D_HORZRES >> 8) & 0xff,
 						D_HORZRES & 0xff } };

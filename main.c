@@ -6,7 +6,6 @@
 
 #include "misc.h"
 #include "display.h"
-#include "io.h"
 #include "sram.h"
 #include "graph.h"
 
@@ -23,6 +22,8 @@
 // 4 init && direct write to display
 // 5 init && sram as framebuffer
 // 6 init && sram && drawpixel routine
+// 7 init && drawline test
+// 8 init && drawing of bytearray
 
 void test(uint8_t testnr)
 {

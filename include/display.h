@@ -15,6 +15,8 @@ static const size_t D_BUFF_SIZE = (D_HORZRES * D_VERTRES) / 8;
 // 0x0 to D_BUFF_SIZE -> b/w data
 // D_BUFF_SIZE + 1 to D_BUFF_SIZE * 2 -> r/n data
 
+// all display commands
+// (some are unused)
 enum {
     D_PSR = 0x00,
     D_PWR = 0x01,
@@ -57,7 +59,7 @@ enum {
     D_TSSET = 0xe5
 };
 
-
+// enum for easily setting pixels via drawpixel
 enum {
     D_BLACK = 0b00,
     D_WHITE = 0b01,

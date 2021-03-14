@@ -5,6 +5,7 @@
 
 #define DEBUG
 
+// if the statement is false wait endlessly
 #ifdef DEBUG
 #define assert(a) if(!(a)) { \
     while(1) {} \
