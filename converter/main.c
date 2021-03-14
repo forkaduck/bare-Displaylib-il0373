@@ -170,6 +170,11 @@ int main(int argc, char *argv[])
 			return 3;
 		}
 
+		if (args.res_height < bmp.info.bmp_height ||
+		    args.res_width < bmp.info.bmp_width) {
+			printf("Wrong scaling! The missing data is filled with 0\n");
+		}
+
 		dump_struct(&bmp.header, sizeof(struct bmp_header));
 		dump_struct(&bmp.info, sizeof(struct bmp_infoheader));
 
@@ -180,27 +185,18 @@ int main(int argc, char *argv[])
 
 		printf("compression: %x\n", bmp.info.compression_method);
 
-		printf("color masks / alpha: %x / red: %x / green: %x / blue: %x\n",
-		       bmp.info.alpha_mask, bmp.info.red_mask,
-		       bmp.info.green_mask, bmp.info.blue_mask);
+		if (bmp.info.color_space == LCS_CALIBRATED_RGB) {
+			printf("color masks / alpha: %x / red: %x / green: %x / blue: %x\n",
+			       bmp.info.alpha_mask, bmp.info.red_mask,
+			       bmp.info.green_mask, bmp.info.blue_mask);
 
-		printf("color table size:%ld\n", bmp.color_table_size);
+			printf("color table size:%ld\n", bmp.color_table_size);
 
-		printf("Color table sample:\n");
+			printf("Color table sample:\n");
 
-		printf("0x%x 0x%x\n", bmp.color_table[0], bmp.color_table[1]);
-
-		printf("\nFirst 32b chunk:\n");
-		printf("none: %x / alpha:%x / red: %x / green: %x / blue: %x\n",
-		       bmp.image[0].none, bmp.image[0].alpha, bmp.image[0].red,
-		       bmp.image[0].green, bmp.image[0].blue);
-
-		buffer = malloc(bmp.image_size * 4);
-		if (buffer == NULL) {
-			perror("malloc failed");
-			return 4;
+			printf("0x%x 0x%x\n", bmp.color_table[0],
+			       bmp.color_table[1]);
 		}
-		memset(buffer, 0, bmp.image_size * 4);
 
 		{
 			size_t j;
@@ -215,6 +211,13 @@ int main(int argc, char *argv[])
 				((double)args.thresh_red / 100.0f) *
 				(double)bmp.color_table_size;
 
+			buffer = malloc(out_size * 2);
+			if (buffer == NULL) {
+				perror("malloc failed");
+				return 4;
+			}
+			memset(buffer, 0, out_size * 2);
+
 			printf("Mapped b/w thresh:%d\n", mapped_thresh_black);
 			printf("Mapped red thresh:%d\n", mapped_thresh_red);
 			printf("Transforming image data...\n");
@@ -222,31 +225,49 @@ int main(int argc, char *argv[])
 			// write b/w data from which average of rgb data is over threshold
 			offset = 0;
 			for (i = 0; i < out_size; i++) {
-				for (j = 0; j < 8; j++) {
-					// transforming b/w data
-					uint8_t op = 0x0;
-					uint32_t current_thresh_black =
-						((bmp.image[offset].red +
-						  bmp.image[offset].green +
-						  bmp.image[offset].blue) /
-						 3);
+				// check if value is out of range of bmp data
+				if (offset < bmp.image_size) {
+					for (j = 0; j < 8; j++) {
+						// transforming b/w data
+						uint8_t op = 0x0;
+						uint32_t current_thresh_black =
+							((bmp.image[offset].red +
+							  bmp.image[offset]
+								  .green +
+							  bmp.image[offset]
+								  .blue) /
+							 3);
 
-					if (current_thresh_black <=
-					    mapped_thresh_black) {
-						// write white
-						op = 0x1;
+						printf("none: %x / alpha:%x / red: %x / green: %x / blue: %x\n",
+						       bmp.image[offset].none,
+						       bmp.image[offset].alpha,
+						       bmp.image[offset].red,
+						       bmp.image[offset].green,
+						       bmp.image[offset].blue);
+
+						printf("%lu at %lu / bthresh: %d / mapped_thresh_black: %d\n\n\n",
+						       i, j,
+						       current_thresh_black,
+						       mapped_thresh_black);
+
+						if (current_thresh_black >
+						    mapped_thresh_black) {
+							// write white
+							op = 0x1;
+						}
+						buffer[i] |= op << (7 - j);
+
+						// transforming red data
+						op = 0x0;
+						if (bmp.image[offset].red >
+						    mapped_thresh_red) {
+							op = 0x1;
+						}
+						buffer[i + out_size] |=
+							op << (7 - j);
+
+						offset++;
 					}
-					buffer[i] |= op << (7 - j);
-
-					// transforming red data
-					op = 0x0;
-					if (bmp.image[offset].red <=
-					    mapped_thresh_red) {
-						op = 0x1;
-					}
-					buffer[i + out_size] |= op << (7 - j);
-
-					offset++;
 				}
 			}
 
@@ -254,8 +275,8 @@ int main(int argc, char *argv[])
 			print_file(out, buffer, out_size * 2, args.res_width,
 				   args.res_height * 2);
 			close_img(&bmp);
+			free(buffer);
 		}
-		free(buffer);
 	}
 
 	fclose(in);

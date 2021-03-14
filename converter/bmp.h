@@ -4,6 +4,17 @@
 #include <stdio.h>
 #include <stdint.h>
 
+ typedef  enum {
+    // I think that this one uses the color table
+   LCS_CALIBRATED_RGB = 0x00000000,
+
+   // use sRGB color table (dont read color table)
+   LCS_sRGB = 0x73524742,
+
+   // some retarded windows specific table
+   LCS_WINDOWS_COLOR_SPACE = 0x57696E20
+ } LogicalColorSpace;
+
 // The underscore (_) marks useless fields in headers
 
 static const size_t bmp_header_size = 14;

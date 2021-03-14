@@ -59,41 +59,38 @@ int parse_img(struct bitmap *bmp, FILE *in)
 	bmp->blue_offset = __builtin_ffs(bmp->info.blue_mask) - 1;
 
 	// --- read color table ---
-	// jump to the start of the color table
-	if (fseek(in, bmp->info.header_size + bmp_header_size, SEEK_SET)) {
-		rv = 4;
-		goto error_exit;
-	}
-
 	// get color table and size
-	if (bmp->info.num_colors_in_palette) {
-		bmp->color_table_size = bmp->info.num_colors_in_palette;
-	} else {
-		// calculate the size with the max index of any color
-		bmp->color_table_size =
-			max(max(bmp->info.red_mask >> bmp->red_offset,
-				bmp->info.green_mask >> bmp->green_offset),
-			    bmp->info.blue_mask >> bmp->blue_offset);
-	}
+	bmp->color_table_size = bmp->info.num_colors_in_palette;
 
-	// color table is actualy only 3 byte big
-	bmp->color_table = malloc(bmp->color_table_size * 4);
-	if (bmp->color_table == NULL) {
-		rv = 5;
-		goto error_exit;
-	}
+	printf("color_table_size:%ld\n", bmp->color_table_size);
 
-	// read color table width padding of 1 byte
-	for (i = 0; i < bmp->color_table_size; i++) {
-		uint32_t entry;
-
-		// read color table
-		if (fread(&entry, 3, 1, in) != 1) {
-			rv = 6;
+	if (bmp->info.color_space == LCS_CALIBRATED_RGB) {
+		// jump to the start of the color table
+		if (fseek(in, bmp->info.header_size + bmp_header_size,
+			  SEEK_SET)) {
+			rv = 4;
 			goto error_exit;
 		}
 
-		bmp->color_table[i] = entry;
+		// color table is actualy only 3 byte big
+		bmp->color_table = malloc(bmp->color_table_size * 4);
+		if (bmp->color_table == NULL) {
+			rv = 5;
+			goto error_exit;
+		}
+
+		// read color table width padding of 1 byte
+		for (i = 0; i < bmp->color_table_size; i++) {
+			uint32_t entry;
+
+			// read color table
+			if (fread(&entry, 3, 1, in) != 1) {
+				rv = 6;
+				goto error_exit;
+			}
+
+			bmp->color_table[i] = entry;
+		}
 	}
 
 	// --- read image array ---
@@ -123,69 +120,106 @@ int parse_img(struct bitmap *bmp, FILE *in)
 			goto error_exit;
 		}
 
-		// convert the 32b chunk into a bmp_image_member
-		// and add that to the array
-		for (i = 0; i < bmp->image_size; i++) {
-			uint32_t buffer;
+		// convert with colortable (TODO either test or remove support)
+		if (bmp->info.color_space == LCS_CALIBRATED_RGB) {
+			// convert the 32b chunk into a bmp_image_member
+			// and add that to the array
+			for (i = 0; i < bmp->image_size; i++) {
+				uint32_t buffer;
 
-			uint32_t alpha_index;
-			uint32_t red_index;
-			uint32_t green_index;
-			uint32_t blue_index;
+				uint32_t alpha_index;
+				uint32_t red_index;
+				uint32_t green_index;
+				uint32_t blue_index;
 
-			// read one image chunk
-			if (fread(&buffer, 4, 1, in) != 1) {
-				rv = 9;
-				goto error_exit;
-			}
+				// read one image chunk
+				if (fread(&buffer, 4, 1, in) != 1) {
+					rv = 9;
+					goto error_exit;
+				}
 
-			// calculate index into color table
-			alpha_index = (bmp->info.alpha_mask & buffer) >>
-				      bmp->alpha_offset;
-
-			red_index = (bmp->info.red_mask & buffer) >>
-				    bmp->red_offset;
-
-			green_index = (bmp->info.green_mask & buffer) >>
-				      bmp->green_offset;
-
-			blue_index = (bmp->info.blue_mask & buffer) >>
-				     bmp->blue_offset;
-
-			//printf("buffer:%x\n", buffer);
-			//printf("%ld: r:%x g:%x b:%x\n", i, red_index,
-			//       green_index, blue_index);
-
-			// check if any index is bigger than the maximum index
-			if (alpha_index >= bmp->color_table_size ||
-			    red_index >= bmp->color_table_size ||
-			    green_index >= bmp->color_table_size ||
-			    blue_index >= bmp->color_table_size) {
-				printf("Index out of bounds!\nalpha:%d / red:%d / green:%d / blue:%d / size:%ld\n",
-				       alpha_index, red_index, green_index,
-				       blue_index, bmp->color_table_size);
-				rv = 10;
-				goto error_exit;
-			}
-
-			// fetch color from colortable
-			bmp->image[i].none = buffer;
-
-			bmp->image[i].alpha = (bmp->color_table[alpha_index] &
-					       bmp->info.alpha_mask) >>
+				// calculate index into color table
+				alpha_index = (bmp->info.alpha_mask & buffer) >>
 					      bmp->alpha_offset;
 
-			bmp->image[i].red = (bmp->color_table[red_index] &
-					     bmp->info.red_mask) >>
+				red_index = (bmp->info.red_mask & buffer) >>
 					    bmp->red_offset;
 
-			bmp->image[i].green = (bmp->color_table[green_index] &
-					       bmp->info.green_mask) >>
+				green_index = (bmp->info.green_mask & buffer) >>
 					      bmp->green_offset;
 
-			bmp->image[i].blue = (bmp->color_table[blue_index] &
-					      bmp->info.blue_mask) >>
+				blue_index = (bmp->info.blue_mask & buffer) >>
 					     bmp->blue_offset;
+
+				//printf("buffer:%x\n", buffer);
+				//printf("%ld: r:%x g:%x b:%x\n", i, red_index,
+				//       green_index, blue_index);
+
+				// check if any index is bigger than the maximum index
+				if (alpha_index >= bmp->color_table_size ||
+				    red_index >= bmp->color_table_size ||
+				    green_index >= bmp->color_table_size ||
+				    blue_index >= bmp->color_table_size) {
+					printf("Index out of bounds!\nalpha:%d / red:%d / green:%d / blue:%d / size:%ld\n",
+					       alpha_index, red_index,
+					       green_index, blue_index,
+					       bmp->color_table_size);
+					rv = 10;
+					goto error_exit;
+				}
+
+				// fetch color from colortable
+				bmp->image[i].none = buffer;
+
+				bmp->image[i].alpha =
+					(bmp->color_table[alpha_index] &
+					 bmp->info.alpha_mask) >>
+					bmp->alpha_offset;
+
+				bmp->image[i].red =
+					(bmp->color_table[red_index] &
+					 bmp->info.red_mask) >>
+					bmp->red_offset;
+
+				bmp->image[i].green =
+					(bmp->color_table[green_index] &
+					 bmp->info.green_mask) >>
+					bmp->green_offset;
+
+				bmp->image[i].blue =
+					(bmp->color_table[blue_index] &
+					 bmp->info.blue_mask) >>
+					bmp->blue_offset;
+			}
+		} else {
+			// convert using pixel array only
+			for (i = 0; i < bmp->image_size; i++) {
+				uint32_t buffer;
+
+				// read one image chunk
+				if (fread(&buffer, 4, 1, in) != 1) {
+					rv = 9;
+					goto error_exit;
+				}
+
+				bmp->image[i].none = buffer;
+
+				bmp->image[i].alpha =
+					(buffer & bmp->info.alpha_mask) >>
+					bmp->alpha_offset;
+
+				bmp->image[i].red =
+					(buffer & bmp->info.red_mask) >>
+					bmp->red_offset;
+
+				bmp->image[i].green =
+					(buffer & bmp->info.green_mask) >>
+					bmp->green_offset;
+
+				bmp->image[i].blue =
+					(buffer & bmp->info.blue_mask) >>
+					bmp->blue_offset;
+			}
 		}
 	}
 	return 0;
