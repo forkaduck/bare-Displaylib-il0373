@@ -9,7 +9,7 @@
 
 #include "sram.h"
 
-inline void wait_1u(uint32_t us)
+static inline void wait_1u(uint32_t us)
 {
 	uint32_t i, j;
 	for (i = 0; i < us; i++) {
@@ -136,6 +136,23 @@ void init_il0373()
 		while (BUSY) {
 		}
 	}
+}
+
+void deinit_il0373()
+{
+	struct wrdata {
+		uint8_t data[20];
+	} wr;
+
+	while (BUSY) {
+	}
+
+	// send poweroff
+	send_il0373(D_POF, NULL, 0);
+
+	// put display in deepsleep
+	wr = (struct wrdata){ .data = { 0xa5 } };
+	send_il0373(D_DSLP, wr.data, 1);
 }
 
 void push_il0373()

@@ -14,9 +14,16 @@
 #define RST *((volatile uint32_t*)(BB_PERIPH(GPIOA_BASE + 3 * sizeof(uint32_t), 8)))
 #define BUSY *((volatile uint32_t*)(BB_PERIPH(GPIOA_BASE + 2 * sizeof(uint32_t), 11)))
 
+// initalise the spi1 port
 void spi1_init();
+
+// reset all chip select pins
 void spi1_reset_cs();
+
+// send byte over the spi1 port
 void spi1_send(uint8_t data);
+
+// receive one byte over spi1
 uint8_t spi1_rec();
 
 #endif

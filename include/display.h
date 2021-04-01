@@ -67,9 +67,19 @@ enum {
     D_NONE = 0b10,
 };
 
+// send a command to the display driver
 void send_il0373(uint8_t command, uint8_t data[], size_t datasize);
+
+// initalise the display
 void init_il0373();
 
+// turn of display and put it into sleep
+void deinit_il0373();
+
+// transfer the screenbuffer in sram
+// to the display driver
 void push_il0373();
+
+// draws one pixel into the sram buffer
 void drawpixel_il0373(uint8_t x, uint8_t y, uint8_t value);
 #endif

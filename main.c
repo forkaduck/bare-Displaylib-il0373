@@ -208,5 +208,7 @@ int main()
 	__enable_irq();
 
 	test(8);
+
+	deinit_il0373();
 	return 0;
 }
